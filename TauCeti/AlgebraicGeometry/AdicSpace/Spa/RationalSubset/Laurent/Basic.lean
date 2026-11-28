@@ -394,6 +394,14 @@ theorem laurentCoverOpen_mem_spaRationalOpens (f : A) (b : Bool) :
     laurentCoverOpen Aplus f b ∈ spaRationalOpens Aplus :=
   spaBasicOpen_mem_spaRationalOpens (isOpen_span_of_one_mem (by cases b <;> simp))
 
+open scoped Classical in
+variable (Aplus) in
+/-- The two pieces of `laurentCoverOpen Aplus f` cover `Spa(A, A⁺)`. -/
+theorem iSup_laurentCoverOpen (f : A) : ⨆ b : Bool, laurentCoverOpen Aplus f b = ⊤ :=
+  top_le_iff.mp fun v _ ↦ by
+    obtain ⟨b, hb⟩ := Set.mem_iUnion.mp (spa_subset_iUnion_laurentCover Aplus f v.property)
+    exact Opens.mem_iSup.mpr ⟨b, mem_spaBasicOpen.mpr hb⟩
+
 variable (Aplus) in
 /-- **First piece of `laurentCoverOpen (u⁻¹ g)`**: `{|u⁻¹ g| ≤ 1} = R({g, u}/u)`. -/
 theorem laurentCoverOpen_inv_mul_true [DecidableEq A] (u : Aˣ) (g : A) :

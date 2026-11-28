@@ -22,8 +22,6 @@ flat `R`-module, `GlueingDatum.equivSectionsOfModule` recovers `N` from `Glueing
 
 ## Main definitions
 
-* `TauCeti.balancedExtensionEquivTensorProduct`: identification
-  `BalancedExtension (algebraMap A B) M ≃ₗ[B] B ⊗[A] M`.
 * `TauCeti.GlueingDatum`, `TauCeti.GlueingDatum.patchedTransition`,
   `TauCeti.GlueingDatum.sectionsEquivPatchedModule`, and
   `TauCeti.GlueingDatum.sectionsOfModuleEquivPatchedModule`.
@@ -41,58 +39,6 @@ public section
 open TensorProduct
 
 namespace TauCeti
-
-section BalancedExtensionBridge
-
-variable (A B M : Type*) [CommRing A] [CommRing B] [Algebra A B] [AddCommGroup M] [Module A M]
-
-/-- Canonical `B`-linear equivalence `BalancedExtension (algebraMap A B) M ≃ₗ[B] B ⊗[A] M`. -/
-noncomputable def balancedExtensionEquivTensorProduct :
-    BalancedExtension (algebraMap A B) M ≃ₗ[B] B ⊗[A] M :=
-  letI : Module A (BalancedExtension (algebraMap A B) M) :=
-    BalancedExtension.moduleBase (algebraMap A B) M A
-  let fwd : BalancedExtension (algebraMap A B) M →ₗ[B] B ⊗[A] M := BalancedExtension.lift
-    { toFun m := (1 : B) ⊗ₜ[A] m, map_add' _ _ := TensorProduct.tmul_add _ _ _,
-      map_smul' a m := by simp only [algebraMap_smul B a _, TensorProduct.tmul_smul] }
-  let bwdA : B ⊗[A] M →ₗ[A] BalancedExtension (algebraMap A B) M := TensorProduct.lift
-    { toFun b :=
-        { toFun m := BalancedExtension.tmul (algebraMap A B) b m
-          map_add' _ _ := BalancedExtension.tmul_add _ _ _
-          map_smul' a m := by
-            change BalancedExtension.tmul (algebraMap A B) b (a • m) =
-              (algebraMap A B a) • BalancedExtension.tmul (algebraMap A B) b m
-            rw [BalancedExtension.tmul_smul, BalancedExtension.smul_tmul, mul_comm] }
-      map_add' _ _ := LinearMap.ext fun _ ↦ BalancedExtension.add_tmul _ _ _
-      map_smul' a b := LinearMap.ext fun m ↦ by
-        change BalancedExtension.tmul (algebraMap A B) (a • b) m =
-          (algebraMap A B a) • BalancedExtension.tmul (algebraMap A B) b m
-        rw [Algebra.smul_def, BalancedExtension.smul_tmul] }
-  let bwd : B ⊗[A] M →ₗ[B] BalancedExtension (algebraMap A B) M :=
-    { toFun := bwdA, map_add' := bwdA.map_add
-      map_smul' b x := by
-        induction x using TensorProduct.inductionOn with
-        | tmul _ _ =>
-          change bwdA (b • _) = b • bwdA _; rw [TensorProduct.smul_tmul', smul_eq_mul]; simp [bwdA]
-        | add _ _ hx hy => simp only [smul_add, map_add, hx, hy] }
-  LinearEquiv.ofLinearMap fwd bwd
-    (LinearMap.ext fun x ↦ by
-      induction x using TensorProduct.inductionOn with
-      | tmul b m => change fwd (bwdA _) = _; simp [fwd, bwdA, TensorProduct.smul_tmul']
-      | add _ _ hx hy => simp only [map_add, LinearMap.id_apply, hx, hy])
-    (BalancedExtension.hom_ext fun m ↦ by
-      change bwdA (fwd _) = BalancedExtension.tmul (algebraMap A B) 1 m; simp [fwd, bwdA])
-
-variable {A B M}
-
-@[simp] theorem balancedExtensionEquivTensorProduct_tmul (b : B) (m : M) :
-    balancedExtensionEquivTensorProduct A B M (BalancedExtension.tmul (algebraMap A B) b m) =
-      b ⊗ₜ[A] m := by simp [balancedExtensionEquivTensorProduct, TensorProduct.smul_tmul']
-
-@[simp] theorem balancedExtensionEquivTensorProduct_symm_tmul (b : B) (m : M) :
-    (balancedExtensionEquivTensorProduct A B M).symm (b ⊗ₜ[A] m) =
-      BalancedExtension.tmul (algebraMap A B) b m := by simp [balancedExtensionEquivTensorProduct]
-
-end BalancedExtensionBridge
 
 section GlueingDatum
 variable {R₁ R₂ R₁₂ : Type*} [CommRing R₁] [CommRing R₂] [CommRing R₁₂]
@@ -112,12 +58,12 @@ variable (R₁ R₂ R₁₂ M₁ M₂ M₁₂) in
 def GlueingDatum.symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     GlueingDatum R₂ R₁ R₁₂ M₂ M₁ M₁₂ := ⟨D.ψ₂, D.ψ₁⟩
 
-@[simp] theorem GlueingDatum.symm_ψ₁ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    D.symm.ψ₁ = D.ψ₂ := by rfl
-@[simp] theorem GlueingDatum.symm_ψ₂ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    D.symm.ψ₂ = D.ψ₁ := by rfl
-@[simp] theorem GlueingDatum.symm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
-    D.symm.symm = D := by rfl
+@[simp] theorem GlueingDatum.symm_ψ₁ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) : D.symm.ψ₁ = D.ψ₂ :=
+  by rfl
+@[simp] theorem GlueingDatum.symm_ψ₂ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) : D.symm.ψ₂ = D.ψ₁ :=
+  by rfl
+@[simp] theorem GlueingDatum.symm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) : D.symm.symm = D :=
+  by rfl
 
 /-- The transition isomorphism `R₁₂ ⊗_{R₁} M₁ ≃ₗ[R₁₂] R₁₂ ⊗_{R₂} M₂` from `D.ψ₂.symm ∘ D.ψ₁`. -/
 noncomputable def GlueingDatum.patchedTransition (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
@@ -214,22 +160,22 @@ variable {R}
 theorem GlueingDatum.sections_eq_ker (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
     [Module R M₁₂] [IsScalarTower R R₁₂ M₁₂] :
     D.sections R = LinearMap.ker (D.diff R) := by ext x; simp [sub_eq_zero]
-@[simp] theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.sections R) : D.fst R x = x.val.1 := by rfl
-@[simp] theorem GlueingDatum.snd_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂)
-    (x : D.sections R) : D.snd R x = x.val.2 := by rfl
+@[simp] theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
+    D.fst R x = x.val.1 := by rfl
+@[simp] theorem GlueingDatum.snd_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
+    D.snd R x = x.val.2 := by rfl
 @[simp] theorem GlueingDatum.coe_lift_apply {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
     (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) :
     ((D.lift f₁ f₂ h n : D.sections R) : M₁ × M₂) = (f₁ n, f₂ n) := by rfl
 theorem GlueingDatum.fst_lift {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
-    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) : D.fst R (D.lift f₁ f₂ h n) = f₁ n :=
-  by rfl
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) :
+    D.fst R (D.lift f₁ f₂ h n) = f₁ n := by rfl
 theorem GlueingDatum.snd_lift {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
-    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) : D.snd R (D.lift f₁ f₂ h n) = f₂ n :=
-  by rfl
+    (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) (n : N) :
+    D.snd R (D.lift f₁ f₂ h n) = f₂ n := by rfl
 @[simp] theorem GlueingDatum.fst_comp_lift {N : Type*} [AddCommMonoid N] [Module R N]
     (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (f₁ : N →ₗ[R] M₁) (f₂ : N →ₗ[R] M₂)
     (h : ∀ n, D.ψ₁ (1 ⊗ₜ f₁ n) = D.ψ₂ (1 ⊗ₜ f₂ n)) :
@@ -424,10 +370,9 @@ private theorem ofModule_patchedTransition_map
         (BalancedExtension.commSqEquiv (GlueingDatum.commSq R R₁ R₂ R₁₂) N x) := by
   induction x using BalancedExtension.induction_on with
   | tmul r₁₂ z => induction z using BalancedExtension.induction_on with
-    | tmul r₁ n => simp [Algebra.smul_def, mul_comm r₁₂]
+    | tmul => simp [Algebra.smul_def, mul_comm r₁₂]
     | add _ _ h₁ h₂ => simp only [BalancedExtension.tmul_add, map_add, h₁, h₂]
   | add _ _ h₁ h₂ => simp only [map_add, h₁, h₂]
-
 private theorem commSqEquiv_map_symm (x : BalancedExtension (algebraMap R₁ R₁₂) (R₁ ⊗[R] N)) :
     BalancedExtension.commSqEquiv (GlueingDatum.commSq R R₁ R₂ R₁₂) N (BalancedExtension.map
         (algebraMap R₁ R₁₂) (balancedExtensionEquivTensorProduct R R₁ N).symm.toLinearMap x) =
@@ -436,7 +381,7 @@ private theorem commSqEquiv_map_symm (x : BalancedExtension (algebraMap R₁ R�
         ((GlueingDatum.ofModule R₁ R₂ R₁₂ R N).patchedTransition x) := by
   induction x using BalancedExtension.induction_on with
   | tmul r₁₂ z => induction z using TensorProduct.inductionOn with
-    | tmul r₁ n => simp [Algebra.smul_def, mul_comm r₁₂]
+    | tmul => simp [Algebra.smul_def, mul_comm r₁₂]
     | add _ _ h₁ h₂ => simp only [BalancedExtension.tmul_add, map_add, h₁, h₂]
   | add _ _ h₁ h₂ => simp only [map_add, h₁, h₂]
 
@@ -458,7 +403,6 @@ noncomputable def GlueingDatum.sectionsOfModuleEquivPatchedModule :
       (LinearMap.ext fun _ ↦ PatchedModule.ext (by simp) (by simp))
       (LinearMap.ext fun _ ↦ PatchedModule.ext (by simp) (by simp))
   (GlueingDatum.sectionsEquivPatchedModule R _).trans e
-
 /-- `GlueingDatum.sectionsOfModuleEquivPatchedModule` intertwines
 `GlueingDatum.toSectionsOfModule` with `TauCeti.toPatchedModule`. -/
 @[simp] theorem GlueingDatum.sectionsOfModuleEquivPatchedModule_toSectionsOfModule (n : N) :
@@ -476,8 +420,7 @@ private theorem ofModule_cocycle_eq_rTensor (z : (R₁ ⊗[R] N) × (R₂ ⊗[R]
     (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).ψ₁ (1 ⊗ₜ z.1) -
       (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).ψ₂ (1 ⊗ₜ z.2) := by
   obtain ⟨w, rfl⟩ := (TensorProduct.prodLeft R R R₁ R₂ N).surjective z
-  rw [LinearEquiv.symm_apply_apply]
-  induction w using TensorProduct.inductionOn with
+  rw [LinearEquiv.symm_apply_apply]; induction w using TensorProduct.inductionOn with
   | tmul r _ => rcases r with ⟨_, _⟩; simp [Algebra.algebraMap_eq_smul_one]
   | add _ _ h₁ h₂ => simp only [map_add, Prod.fst_add, Prod.snd_add, tmul_add, h₁, h₂]; abel
 
@@ -502,7 +445,6 @@ variable (hinj : Function.Injective fun r : R ↦ (algebraMap R R₁ r, algebraM
 section Flat
 variable [Module.Flat R N]
 include hinj hexact
-
 /-- Whenever `0 → R → R₁ × R₂ → R₁₂` is exact and `N` is a flat `R`-module,
 `GlueingDatum.toSectionsOfModule` is bijective. -/
 theorem GlueingDatum.bijective_toSectionsOfModule_of_flat :
@@ -517,26 +459,21 @@ theorem GlueingDatum.bijective_toSectionsOfModule_of_flat :
     simp [e, ι]
   refine ⟨fun n₁ n₂ hn ↦ (TensorProduct.lid R N).symm.injective <|
       Module.Flat.rTensor_preserves_injective_linearMap ι hinj <| e.injective <| by
-        simpa only [hval] using congrArg Subtype.val hn,
-    fun ⟨z, hz⟩ ↦ ?_⟩
+        simpa only [hval] using congrArg Subtype.val hn, fun ⟨z, hz⟩ ↦ ?_⟩
   obtain ⟨w, hw⟩ := (Module.Flat.rTensor_exact N (f := ι) (g := δ) hexact (e.symm z)).mp
     (by rw [ofModule_cocycle_eq_rTensor z, sub_eq_zero]; exact hz)
   exact ⟨TensorProduct.lid R N w, Subtype.ext <| by
     rw [← hval, LinearEquiv.symm_apply_apply, hw, LinearEquiv.apply_symm_apply]⟩
-
 /-- For a flat `R`-module `N` over an exact ring diagram `0 → R → R₁ × R₂ → R₁₂`, the sections of
 `GlueingDatum.ofModule R₁ R₂ R₁₂ R N` are canonically `R`-linearly isomorphic to `N`. -/
 noncomputable def GlueingDatum.equivSectionsOfModule :
     N ≃ₗ[R] (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).sections R :=
   LinearEquiv.ofBijective (GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N)
     (GlueingDatum.bijective_toSectionsOfModule_of_flat hinj hexact)
-
 @[simp] theorem GlueingDatum.equivSectionsOfModule_apply (n : N) :
     GlueingDatum.equivSectionsOfModule hinj hexact n =
       GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N n := by rfl
-
 end Flat
-
 /-- For a finite projective `R`-module `N`, `GlueingDatum.sectionsOfModuleEquivPatchedModule`
 intertwines `GlueingDatum.equivSectionsOfModule` with `TauCeti.patchedModuleEquiv`. -/
 theorem GlueingDatum.sectionsOfModuleEquivPatchedModule_equivSectionsOfModule
@@ -547,13 +484,8 @@ theorem GlueingDatum.sectionsOfModuleEquivPatchedModule_equivSectionsOfModule
         (fun _ _ ha ↦ GlueingDatum.existsUnique_of_exact hinj hexact ha) N n := by
   rw [patchedModuleEquiv_apply, equivSectionsOfModule_apply,
     sectionsOfModuleEquivPatchedModule_toSectionsOfModule]
-
 end Exact
-
 end OfModule
-
 end GlueingDatum
-
 end TauCeti
-
 end

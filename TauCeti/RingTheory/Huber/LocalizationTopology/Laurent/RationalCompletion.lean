@@ -114,7 +114,6 @@ theorem IsRationalCompletion.surjective_sub_laurent
   intro y; obtain ⟨x₁, x₂, h⟩ := exists_sub_eq_of_surjective_of_map_laurentRelation_eq_zero
     (modelEvalHom_surjective_overlap P f hT₁₂ h₁₂.ratLocEquiv) hρ₁ hρ₂ hrel y
   exact ⟨(x₁, x₂), h⟩
-
 /-- Scalar-tower form of `IsRationalCompletion.surjective_sub_laurent`, for `[Algebra B₁ B₁₂]`
 and `[Algebra B₂ B₁₂]`. -/
 theorem IsRationalCompletion.surjective_algebraMap_sub_laurent
@@ -126,9 +125,6 @@ theorem IsRationalCompletion.surjective_algebraMap_sub_laurent
   h₁.surjective_sub_laurent h₂ h₁₂ (IsScalarTower.toAlgHom A B₁ B₁₂)
     (IsScalarTower.toAlgHom A B₂ B₁₂) hc₁ hc₂
 end Surjective
-
 end Uniform
-
 end TauCeti.Huber
-
 end

@@ -57,23 +57,42 @@ private theorem existsUnique_presentationLimit_laurent {R : Type*} [CommRing R] 
         forget _root_.TopCommRingCat) :=
     Presheaf.isSheaf_comp_of_isSheaf _ _ (forget _root_.TopCommRingCat)
       (Presheaf.isSheaf_comp_of_isSheaf _ _ TopCommRingCat.isCompleteSeparated.ι hsheaf)
-  let U : Bool → Opens ↥(spa Aplus) :=
-    fun b ↦ b.rec (spaBasicOpen Aplus {1} f) (spaBasicOpen Aplus {f, 1} 1)
+  let U := laurentCoverOpen Aplus f
+  have hU₁ : spaBasicOpen Aplus {f, 1} 1 = U true := by
+    simp only [U, laurentCoverOpen, Bool.cond_true]; congr!
   have hcov : Sieve.ofArrows U (fun _ ↦ homOfLE le_top) ∈
       Opens.grothendieckTopology ↥(spa Aplus) ⊤ := fun v _ ↦ by
-    obtain ⟨b, hb⟩ := Set.mem_iUnion.mp (spa_subset_iUnion_laurentCover Aplus f v.property)
-    exact ⟨U b, homOfLE le_top, Sieve.ofArrows_mk _ _ b, by
-      cases b <;> simpa [U, mem_spaBasicOpen, mem_rationalSubset_iff] using hb⟩
+    obtain ⟨b, hb⟩ := Opens.mem_iSup.mp ((by rw [iSup_laurentCoverOpen]; trivial : v ∈ ⨆ b, U b))
+    exact ⟨U b, homOfLE le_top, Sieve.ofArrows_mk _ _ b, hb⟩
   have hfor := (Presieve.isSheafFor_iff_generate _).mpr (hsheafG.isSheafFor _ hcov)
+  let x₁' := (presentationLimitMap (P := P) hU₁.ge).hom.val x₁
+  have hx' : (presentationLimitMap (P := P) (inf_le_left : U true ⊓ U false ≤ U true)).hom.val
+        x₁' =
+      (presentationLimitMap (P := P) (inf_le_right : U true ⊓ U false ≤ U false)).hom.val x₂ := by
+    have hinf : spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f = U true ⊓ U false := by
+      rw [hU₁]; rfl
+    simpa only [x₁', presentationLimitMap_apply_presentationLimitMap_apply] using
+      congrArg (presentationLimitMap (P := P) hinf.ge).hom.val hx
   obtain ⟨a, ha, hu⟩ := (isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P
-    (fun (b : Bool) ↦ (le_top : U b ≤ ⊤))).mp hfor (fun b ↦ b.rec x₂ x₁) fun i j ↦ by
-    rcases i with _ | _ <;> rcases j with _ | _ <;> try rfl
+    (fun (b : Bool) ↦ (le_top : U b ≤ ⊤))).mp hfor (fun b ↦ b.rec x₂ x₁') fun i j ↦ by
+    rcases i, j with ⟨_ | _, _ | _⟩
+    · rfl
     · have h := congrArg (presentationLimitMap (P := P)
-          (le_inf inf_le_right inf_le_left : U false ⊓ U true ≤ U true ⊓ U false)).hom.val hx.symm
+          (le_inf inf_le_right inf_le_left : U false ⊓ U true ≤ U true ⊓ U false)).hom.val hx'.symm
       rwa [presentationLimitMap_apply_presentationLimitMap_apply,
         presentationLimitMap_apply_presentationLimitMap_apply] at h
-    · exact hx
-  exact ⟨a, ⟨ha true, ha false⟩, fun a' ⟨ha'₁, ha'₂⟩ ↦ hu a' fun b ↦ by cases b <;> assumption⟩
+    · exact hx'
+    · rfl
+  have hL (a' : presentationLimit (P := P) Aplus ⊤) :
+      (presentationLimitMap (P := P) (le_top : U true ≤ ⊤)).hom.val a' = x₁' ↔
+        (presentationLimitMap (P := P) (le_top : spaBasicOpen Aplus {f, 1} 1 ≤ ⊤)).hom.val a' =
+          x₁ := ⟨fun h ↦ by
+    have h' := congrArg (presentationLimitMap (P := P) hU₁.le).hom.val h
+    simp only [x₁', presentationLimitMap_apply_presentationLimitMap_apply,
+      presentationLimitMap_refl] at h'; exact h', fun h ↦ by
+    dsimp only [x₁']; rw [← h, presentationLimitMap_apply_presentationLimitMap_apply]⟩
+  exact ⟨a, ⟨(hL a).mp (ha true), ha false⟩, fun a' ⟨ha'₁, ha'₂⟩ ↦ hu a' fun b ↦ by
+    cases b <;> [exact ha'₂; exact (hL a').mpr ha'₁]⟩
 
 section Main
 variable {R R₁ R₂ R₁₂ : Type*} [CommRing R] [CommRing R₁] [CommRing R₂] [CommRing R₁₂]
@@ -133,10 +152,8 @@ theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing
         rw [← IsScalarTower.algebraMap_apply R R₁ R₁₂, ← IsScalarTower.algebraMap_apply R R₂ R₁₂]))
     exact e₀.symm.injective (hglue.unique
       ⟨e₁.injective (by simp [e₀, e₁]), e₂.injective (by simp [e₀, e₂])⟩
-      ⟨e₁.injective (by rw [e₁.apply_symm_apply, rationalSectionRingEquiv_map_top_symm];
-                          exact (congrArg Prod.fst hr).symm),
-       e₂.injective (by rw [e₂.apply_symm_apply, rationalSectionRingEquiv_map_top_symm];
-                          exact (congrArg Prod.snd hr).symm)⟩)
+      ⟨e₁.injective (by simpa [e₀, e₁] using (congrArg Prod.fst hr).symm),
+       e₂.injective (by simpa [e₀, e₂] using (congrArg Prod.snd hr).symm)⟩)
   · obtain ⟨a, ⟨ha₁, ha₂⟩, -⟩ := existsUnique_presentationLimit_laurent P hs f
       (e₁.symm x₁) (e₂.symm x₂)
       (presentationLimitMap_laurentInf_eq hSplus h₁ h₂ h₁₂ hc₁ hc₂ (sub_eq_zero.mp hsub))
@@ -145,9 +162,6 @@ theorem laurent_injective_and_exact_of_isSheafyForEveryPresentation [IsHuberRing
       (by simpa [e₀, e₂, rationalSectionRingEquiv_map_top] using congrArg e₂ ha₂)⟩
   · obtain ⟨rfl, rfl⟩ := Prod.mk.inj h
     simp [← IsScalarTower.algebraMap_apply R R₁ R₁₂, ← IsScalarTower.algebraMap_apply R R₂ R₁₂]
-
 end Main
-
 end TauCeti.Huber
-
 end

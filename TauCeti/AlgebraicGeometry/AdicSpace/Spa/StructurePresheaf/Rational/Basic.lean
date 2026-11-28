@@ -396,7 +396,6 @@ noncomputable def rationalSectionRingEquiv :
   (((forget₂ TopCommRingCat CommRingCat).mapIso
       (rationalSectionTopIso P hAplus T s hT)).commRingCatIsoToRingEquiv).trans
     hB.ratLocEquiv.toRingEquiv
-
 /-- Explicit evaluation formula for `rationalSectionRingEquiv`. -/
 theorem rationalSectionRingEquiv_apply
     (z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus T s)) :
@@ -406,17 +405,14 @@ theorem rationalSectionRingEquiv_apply
         ((presentationLimitRationalIso Aplus hAplus p hT).hom.hom.val z)) := by
   -- `mapIso`, `commRingCatIsoToRingEquiv`, and `eqToIso` unfold to `.hom.val` composition by defeq.
   rw [rationalSectionRingEquiv, rationalSectionTopIso]; rfl
-
 /-- `rationalSectionRingEquiv` is continuous. -/
 theorem continuous_rationalSectionRingEquiv :
     Continuous (rationalSectionRingEquiv P hAplus T s hT hB) :=
   hB.continuous_ratLocEquiv.comp (rationalSectionTopIso P hAplus T s hT).hom.property
-
 /-- The inverse of `rationalSectionRingEquiv` is continuous. -/
 theorem continuous_rationalSectionRingEquiv_symm :
     Continuous (rationalSectionRingEquiv P hAplus T s hT hB).symm :=
   (rationalSectionTopIso P hAplus T s hT).inv.property.comp hB.continuous_ratLocEquiv_symm
-
 end RationalSection
 
 private theorem eqToHom_homOfRationalSubsetSubset_apply
@@ -516,7 +512,5 @@ theorem rationalSectionRingEquiv_symm_algebraMap
     TopCommRingCat.comp_val_apply, TopCommRingCat.eqToHom_apply_eqToHom_symm_apply,
     TopCommRingCat.eqToHom_apply_eqToHom_symm_apply]
   dsimp only; rw [← algebraMap_ratLoc, hB.ratLocEquiv.commutes]
-
 end TauCeti.ValuationSpectrum
-
 end

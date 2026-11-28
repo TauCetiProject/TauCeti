@@ -42,7 +42,6 @@ open TauCeti.Huber TauCeti.ValuationSpectrum
 namespace TauCeti.Huber
 
 section Main
-
 variable {R R₁ R₂ R₁₂ : Type*} [CommRing R] [CommRing R₁] [CommRing R₂] [CommRing R₁₂]
   [UniformSpace R] [IsUniformAddGroup R] [IsTopologicalRing R] [CompleteSpace R] [T0Space R]
   [TopologicalSpace R₁] [TopologicalSpace R₂] [TopologicalSpace R₁₂]
@@ -67,9 +66,7 @@ private theorem isScalarTower_and_continuous_toAlgebra_ratLocEquiv
         (ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT')) ∧
       Continuous (algebraMap (ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT))
         (ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT'))) := by
-  let L := ratLoc P T s (P.hasDenominatorPower_of_isOpen_span T s _ hT)
-  let L' := ratLoc P T' s' (P.hasDenominatorPower_of_isOpen_span T' s' _ hT')
-  let _ : Algebra L L' := (hB'.ratLocEquiv.symm.toRingHom.comp
+  let _ : Algebra _ _ := (hB'.ratLocEquiv.symm.toRingHom.comp
     ((algebraMap B B').comp hB.ratLocEquiv.toRingHom)).toAlgebra
   refine ⟨IsScalarTower.of_algebraMap_eq fun r ↦ ?_, ?_⟩
   · rw [RingHom.algebraMap_toAlgebra]; simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
@@ -118,10 +115,8 @@ theorem GlueingSquare.of_simpleLaurent_of_isSheafyRing [IsTateRing R] (hs : IsSh
     (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ R₁₂)
     (hc₁ : Continuous (algebraMap R₁ R₁₂)) (hc₂ : Continuous (algebraMap R₂ R₁₂)) :
     GlueingSquare R R₁ R₂ R₁₂ :=
-  GlueingSquare.of_simpleLaurent
-    (hs.isSheafyForEveryPresentation (Pair.powerBounded R).isRingOfIntegralElements)
-    h₁ h₂ h₁₂ hc₁ hc₂
-
+  GlueingSquare.of_simpleLaurent (hs.isSheafyForEveryPresentation
+    (Pair.powerBounded R).isRingOfIntegralElements) h₁ h₂ h₁₂ hc₁ hc₂
 end Main
 
 section RatLoc
@@ -144,7 +139,5 @@ theorem GlueingSquare.of_simpleLaurent_ratLoc {R : Type*} [CommRing R] [UniformS
     (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
     (continuous_algebraMap_laurentLeftAlgebra P f) (continuous_algebraMap_laurentRightAlgebra P f)
 end RatLoc
-
 end TauCeti.Huber
-
 end

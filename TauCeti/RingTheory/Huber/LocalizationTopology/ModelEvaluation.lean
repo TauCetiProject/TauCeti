@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Evaluation
 public import TauCeti.RingTheory.Huber.LocalizationTopology.RatLoc
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
+import TauCeti.RingTheory.Huber.LocalizationTopology.RationalCompletion
 
 /-!
 # Evaluating `A⟨X₁, …, Xₖ⟩` into models of `A⟨T/s⟩`
@@ -83,19 +84,8 @@ localization map `Localization.Away s →+* B`. -/
           rw [← e.commutes s]; exact (isUnit_algebraMap_ratLoc P T s _).map e.toRingHom)
         (divBy (t i) s : Localization.Away s) := by
   let _ := P.toNonarchimedeanRing
-  let hden := P.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT
-  let _ := P.locUniformSpace _ s _ hden; have _ := P.isUniformAddGroup_locUniformSpace _ s _ hden
-  have _ := P.isTopologicalRing_locUniformSpace _ s _ hden
-  have heq : (IsLocalization.Away.lift s (show IsUnit (algebraMap A B s) from by
-      rw [← e.commutes s]; exact (isUnit_algebraMap_ratLoc P T s _).map e.toRingHom) :
-        Localization.Away s →+* B) = e.toRingHom.comp Completion.coeRingHom :=
-    IsLocalization.ringHom_ext (Submonoid.powers s) (RingHom.ext fun a ↦ by
-      simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-        AlgEquiv.coe_toRingEquiv, Completion.coe_coeRingHom, IsLocalization.Away.lift_eq]
-      rw [← P.toCompletionLoc_apply T s _ hden a, ← algebraMap_ratLoc, e.commutes])
   rw [modelEvalHom_apply, restrictedMvPowerSeriesCompletionEquiv_symm_apply,
-    P.rationalEvalHom_coe_weightedX]
-  exact (RingHom.congr_fun heq (divBy (t i) s : Localization.Away s)).symm
+    P.rationalEvalHom_coe_weightedX, algEquiv_coe_eq_lift e _ (divBy (t i) s)]
 
 /-- When `t i = s * a`, `modelEvalHom` sends the variable `Xᵢ` to `algebraMap A B a`. -/
 theorem modelEvalHom_X_eq_algebraMap_of_mul (i : Fin k) {a : A} (hti : t i = s * a) :

@@ -32,8 +32,8 @@ dense range of `R₂ → R₁₂`, and prime contraction.
 ## Main results
 
 * `TauCeti.Huber.GlueingSquare.comp_algebraMap_eq` and `algebraMap_algebraMap`.
-* `TauCeti.Huber.GlueingSquare.isEmbedding`, `range_algebraMap_prod`,
-  `isClosed_range_algebraMap_prod`, and `isClosedEmbedding`.
+* `TauCeti.Huber.GlueingSquare.isEmbedding`, `range_algebraMap_prod`, `lift`, `continuous_lift`,
+  `eq_lift`, `isClosed_range_algebraMap_prod`, and `isClosedEmbedding`.
 * `TauCeti.Huber.GlueingSquare.isOpenQuotientMap_sub`, `of_exact`, `congr`, `symm`, `id`, and
   `of_subsingleton_right`.
 * `TauCeti.Huber.GlueingSquare.equivSectionsOfModule`: flat module recovery on a glueing square.
@@ -90,31 +90,85 @@ variable {R R₁ R₂ R₁₂}
 /-- The structure map `R → R₁` of a glueing square is continuous. -/
 theorem GlueingSquare.continuous_algebraMap₁ (h : GlueingSquare R R₁ R₂ R₁₂) :
     Continuous (algebraMap R R₁) := continuous_fst.comp h.isInducing.continuous
-
 /-- The structure map `R → R₂` of a glueing square is continuous. -/
 theorem GlueingSquare.continuous_algebraMap₂ (h : GlueingSquare R R₁ R₂ R₁₂) :
     Continuous (algebraMap R R₂) := continuous_snd.comp h.isInducing.continuous
-
 /-- The two composite ring homomorphisms `R →+* R₁₂` in a glueing square agree. -/
 theorem GlueingSquare.comp_algebraMap_eq (h : GlueingSquare R R₁ R₂ R₁₂) :
     (algebraMap R₁ R₁₂).comp (algebraMap R R₁) = (algebraMap R₂ R₁₂).comp (algebraMap R R₂) :=
   RingHom.ext fun r ↦ sub_eq_zero.mp ((h.exact_sub _).mpr ⟨r, rfl⟩)
-
 /-- Pointwise commutativity of a glueing square `R → R₁, R₂ → R₁₂`. -/
 theorem GlueingSquare.algebraMap_algebraMap (h : GlueingSquare R R₁ R₂ R₁₂) (r : R) :
     algebraMap R₁ R₁₂ (algebraMap R R₁ r) = algebraMap R₂ R₁₂ (algebraMap R R₂ r) :=
   RingHom.congr_fun h.comp_algebraMap_eq r
-
 /-- In a glueing square, the product inclusion `R → R₁ × R₂` is a topological embedding. -/
 theorem GlueingSquare.isEmbedding (h : GlueingSquare R R₁ R₂ R₁₂) :
     Topology.IsEmbedding fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r) :=
   ⟨h.isInducing, h.injective⟩
-
 /-- The range of `R → R₁ × R₂` is the equalizer of `R₁ → R₁₂` and `R₂ → R₁₂`. -/
 theorem GlueingSquare.range_algebraMap_prod (h : GlueingSquare R R₁ R₂ R₁₂) :
     Set.range (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r)) =
       {x : R₁ × R₂ | algebraMap R₁ R₁₂ x.1 = algebraMap R₂ R₁₂ x.2} :=
   Set.ext fun x ↦ (h.exact_sub x).symm.trans sub_eq_zero
+
+section Lift
+variable {T : Type*} [Semiring T]
+
+/-- Pullback universal property of a glueing square: lift compatible `f₁ : T →+* R₁` and
+`f₂ : T →+* R₂` along `R → R₁ × R₂`. -/
+noncomputable def GlueingSquare.lift (h : GlueingSquare R R₁ R₂ R₁₂) (f₁ : T →+* R₁)
+    (f₂ : T →+* R₂) (hf : (algebraMap R₁ R₁₂).comp f₁ = (algebraMap R₂ R₁₂).comp f₂) : T →+* R :=
+  let φ t := (h.exact_sub (f₁ t, f₂ t)).mp (sub_eq_zero.mpr (RingHom.congr_fun hf t))
+  let h1 t : algebraMap R R₁ (φ t).choose = f₁ t := congrArg Prod.fst (φ t).choose_spec
+  let h2 t : algebraMap R R₂ (φ t).choose = f₂ t := congrArg Prod.snd (φ t).choose_spec
+  { toFun t := (φ t).choose
+    map_one' := h.injective (Prod.ext ((h1 1).trans <| (map_one f₁).trans (map_one _).symm)
+      ((h2 1).trans <| (map_one f₂).trans (map_one _).symm))
+    map_zero' := h.injective (Prod.ext ((h1 0).trans <| (map_zero f₁).trans (map_zero _).symm)
+      ((h2 0).trans <| (map_zero f₂).trans (map_zero _).symm))
+    map_add' a b := h.injective (Prod.ext ((h1 _).trans <| (map_add f₁ a b).trans <|
+      (congrArg₂ (· + ·) (h1 a).symm (h1 b).symm).trans (map_add (algebraMap R R₁) _ _).symm)
+      ((h2 _).trans <| (map_add f₂ a b).trans <|
+      (congrArg₂ (· + ·) (h2 a).symm (h2 b).symm).trans (map_add (algebraMap R R₂) _ _).symm))
+    map_mul' a b := h.injective (Prod.ext ((h1 _).trans <| (map_mul f₁ a b).trans <|
+      (congrArg₂ (· * ·) (h1 a).symm (h1 b).symm).trans (map_mul (algebraMap R R₁) _ _).symm)
+      ((h2 _).trans <| (map_mul f₂ a b).trans <|
+      (congrArg₂ (· * ·) (h2 a).symm (h2 b).symm).trans (map_mul (algebraMap R R₂) _ _).symm)) }
+
+@[simp] theorem GlueingSquare.algebraMap_lift_left (h : GlueingSquare R R₁ R₂ R₁₂) (f₁ : T →+* R₁)
+    (f₂ : T →+* R₂) (hf : (algebraMap R₁ R₁₂).comp f₁ = (algebraMap R₂ R₁₂).comp f₂) (t : T) :
+    algebraMap R R₁ (h.lift f₁ f₂ hf t) = f₁ t :=
+  congrArg Prod.fst ((h.exact_sub _).mp (sub_eq_zero.mpr (RingHom.congr_fun hf t))).choose_spec
+@[simp] theorem GlueingSquare.algebraMap_lift_right (h : GlueingSquare R R₁ R₂ R₁₂)
+    (f₁ : T →+* R₁) (f₂ : T →+* R₂)
+    (hf : (algebraMap R₁ R₁₂).comp f₁ = (algebraMap R₂ R₁₂).comp f₂) (t : T) :
+    algebraMap R R₂ (h.lift f₁ f₂ hf t) = f₂ t :=
+  congrArg Prod.snd ((h.exact_sub _).mp (sub_eq_zero.mpr (RingHom.congr_fun hf t))).choose_spec
+@[simp] theorem GlueingSquare.comp_lift_left (h : GlueingSquare R R₁ R₂ R₁₂) (f₁ : T →+* R₁)
+    (f₂ : T →+* R₂) (hf : (algebraMap R₁ R₁₂).comp f₁ = (algebraMap R₂ R₁₂).comp f₂) :
+    (algebraMap R R₁).comp (h.lift f₁ f₂ hf) = f₁ := RingHom.ext (h.algebraMap_lift_left f₁ f₂ hf)
+@[simp] theorem GlueingSquare.comp_lift_right (h : GlueingSquare R R₁ R₂ R₁₂) (f₁ : T →+* R₁)
+    (f₂ : T →+* R₂) (hf : (algebraMap R₁ R₁₂).comp f₁ = (algebraMap R₂ R₁₂).comp f₂) :
+    (algebraMap R R₂).comp (h.lift f₁ f₂ hf) = f₂ := RingHom.ext (h.algebraMap_lift_right f₁ f₂ hf)
+/-- The universal lift `h.lift f₁ f₂ hf` is continuous whenever `f₁` and `f₂` are. -/
+theorem GlueingSquare.continuous_lift [TopologicalSpace T] (h : GlueingSquare R R₁ R₂ R₁₂)
+    {f₁ : T →+* R₁} {f₂ : T →+* R₂}
+    (hf : (algebraMap R₁ R₁₂).comp f₁ = (algebraMap R₂ R₁₂).comp f₂)
+    (hc₁ : Continuous f₁) (hc₂ : Continuous f₂) : Continuous (h.lift f₁ f₂ hf) :=
+  h.isInducing.continuous_iff.mpr <| by
+    simpa only [Function.comp_def, algebraMap_lift_left, algebraMap_lift_right] using hc₁.prodMk hc₂
+/-- Two ring homomorphisms into `R` agree if their compositions with `R → R₁` and `R → R₂` do. -/
+theorem GlueingSquare.ringHom_ext (h : GlueingSquare R R₁ R₂ R₁₂) {g₁ g₂ : T →+* R}
+    (h₁ : (algebraMap R R₁).comp g₁ = (algebraMap R R₁).comp g₂)
+    (h₂ : (algebraMap R R₂).comp g₁ = (algebraMap R R₂).comp g₂) : g₁ = g₂ :=
+  RingHom.ext fun t ↦ h.injective (Prod.ext (RingHom.congr_fun h₁ t) (RingHom.congr_fun h₂ t))
+/-- Uniqueness of the universal lift `h.lift f₁ f₂ hf`. -/
+theorem GlueingSquare.eq_lift (h : GlueingSquare R R₁ R₂ R₁₂) {f₁ : T →+* R₁} {f₂ : T →+* R₂}
+    (hf : (algebraMap R₁ R₁₂).comp f₁ = (algebraMap R₂ R₁₂).comp f₂) {g : T →+* R}
+    (hg₁ : (algebraMap R R₁).comp g = f₁) (hg₂ : (algebraMap R R₂).comp g = f₂) :
+    g = h.lift f₁ f₂ hf := h.ringHom_ext (hg₁.trans (h.comp_lift_left f₁ f₂ hf).symm)
+  (hg₂.trans (h.comp_lift_right f₁ f₂ hf).symm)
+end Lift
 
 /-- With Hausdorff overlap `R₁₂`, the range of `R → R₁ × R₂` is closed. -/
 theorem GlueingSquare.isClosed_range_algebraMap_prod [T2Space R₁₂]
@@ -122,17 +176,14 @@ theorem GlueingSquare.isClosed_range_algebraMap_prod [T2Space R₁₂]
     IsClosed (Set.range fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r)) :=
   h.range_algebraMap_prod.symm ▸ isClosed_eq (h.continuous_algebraMap₁₁₂.comp continuous_fst)
     (h.continuous_algebraMap₂₁₂.comp continuous_snd)
-
 /-- With Hausdorff overlap `R₁₂`, `R → R₁ × R₂` is a closed embedding. -/
 theorem GlueingSquare.isClosedEmbedding [T2Space R₁₂] (h : GlueingSquare R R₁ R₂ R₁₂) :
     Topology.IsClosedEmbedding fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r) :=
   ⟨h.isEmbedding, h.isClosed_range_algebraMap_prod⟩
-
 /-- In a glueing square, the difference map `R₁ × R₂ → R₁₂` is a quotient map. -/
 theorem GlueingSquare.isQuotientMap_sub (h : GlueingSquare R R₁ R₂ R₁₂) :
     Topology.IsQuotientMap fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2 :=
   Topology.isQuotientMap_iff_isStrictMap_surjective.mpr ⟨h.isStrictMap_sub, h.surjective_sub⟩
-
 /-- With continuous addition on `R₁` and `R₂`, `R₁ × R₂ → R₁₂` is an open quotient map. -/
 theorem GlueingSquare.isOpenQuotientMap_sub [ContinuousAdd R₁] [ContinuousAdd R₂]
     (h : GlueingSquare R R₁ R₂ R₁₂) :
@@ -183,7 +234,7 @@ theorem GlueingSquare.congr {L₁ L₂ L₁₂ : Type*} [CommRing L₁] [CommRin
   let H₁₂ : L₁₂ ≃ₜ R₁₂ := ⟨e₁₂.toEquiv, he₁₂, he₁₂_symm⟩
   have hι : (fun r : R ↦ (algebraMap R R₁ r, algebraMap R R₂ r)) =
       (H₁.prodCongr H₂) ∘ fun r : R ↦ (algebraMap R L₁ r, algebraMap R L₂ r) := by
-    ext r <;> simp [H₁, H₂]
+    ext <;> simp [H₁, H₂]
   have hδ : (fun x : R₁ × R₂ ↦ algebraMap R₁ R₁₂ x.1 - algebraMap R₂ R₁₂ x.2) =
       H₁₂ ∘ (fun y : L₁ × L₂ ↦ algebraMap L₁ L₁₂ y.1 - algebraMap L₂ L₁₂ y.2) ∘
         (H₁.prodCongr H₂).symm := by ext ⟨_, _⟩; simp [H₁, H₂, H₁₂, map_sub, hcomp₁, hcomp₂]
@@ -219,7 +270,6 @@ theorem GlueingSquare.congr {L₁ L₂ L₁₂ : Type*} [CommRing L₁] [CommRin
       obtain ⟨p, hp, hpm⟩ := h.exists_prime_comap_eq m hm
       refine ⟨p.comap (RingHom.prodMap e₁.symm.toRingHom e₂.symm.toRingHom), hp.comap _, ?_⟩
       rw [Ideal.comap_comap]; convert hpm using 2; ext r <;> simp }
-
 end Basic
 
 section OfExact
@@ -264,11 +314,12 @@ theorem GlueingSquare.of_exact (hc₁ : Continuous (algebraMap R R₁))
     exact isClosed_eq (hc₁₁₂.comp continuous_fst) (hc₂₁₂.comp continuous_snd)
   have hι_emb : Topology.IsEmbedding ι := Topology.isEmbedding_iff_isStrictMap_injective.mpr
     ⟨ι.isStrictMap_of_isClosed_range_of_isTateRing (hc₁.prodMk hc₂).continuousAt hclosed, hinj⟩
-  exact ⟨hc₁₁₂, hc₂₁₂, hinj, hexact, hsurj, hι_emb.isInducing,
-    (δ.isQuotientMap_of_isTateRing hsurj
-      ((hc₁₁₂.comp continuous_fst).sub (hc₂₁₂.comp continuous_snd)).continuousAt).isStrictMap,
-    hdense, hprime⟩
-
+  exact {
+    continuous_algebraMap₁₁₂ := hc₁₁₂, continuous_algebraMap₂₁₂ := hc₂₁₂, injective := hinj,
+    exact_sub := hexact, surjective_sub := hsurj, isInducing := hι_emb.isInducing,
+    isStrictMap_sub := (δ.isQuotientMap_of_isTateRing hsurj ((hc₁₁₂.comp continuous_fst).sub
+      (hc₂₁₂.comp continuous_snd)).continuousAt).isStrictMap,
+    denseRange_algebraMap₂₁₂ := hdense, exists_prime_comap_eq := hprime }
 /-- The identity glueing square `R → R, R → R` on any topological ring with continuous sub. -/
 theorem GlueingSquare.id (R : Type*) [CommRing R] [TopologicalSpace R] [ContinuousSub R] :
     GlueingSquare R R R R where
@@ -283,7 +334,6 @@ theorem GlueingSquare.id (R : Type*) [CommRing R] [TopologicalSpace R] [Continuo
   denseRange_algebraMap₂₁₂ := denseRange_id
   exists_prime_comap_eq m hm := ⟨m.comap (RingHom.fst R R), hm.isPrime.comap _,
     by rw [Ideal.comap_comap]; exact Ideal.comap_id m⟩
-
 /-- A degenerate glueing square `R → R, R₂ → R₁₂` with subsingleton `R₂`, `R₁₂`. -/
 theorem GlueingSquare.of_subsingleton_right {R R₂ R₁₂ : Type*} [CommRing R] [CommRing R₂]
     [CommRing R₁₂] [TopologicalSpace R] [TopologicalSpace R₂] [TopologicalSpace R₁₂]
@@ -305,7 +355,6 @@ theorem GlueingSquare.of_subsingleton_right {R R₂ R₁₂ : Type*} [CommRing R
   denseRange_algebraMap₂₁₂ _ := subset_closure ⟨(0 : R₂), Subsingleton.elim _ _⟩
   exists_prime_comap_eq m hm := ⟨m.comap (RingHom.fst R R₂), hm.isPrime.comap _,
     by rw [Ideal.comap_comap]; exact Ideal.comap_id m⟩
-
 end OfExact
 
 section GlueingSquareSections
@@ -313,21 +362,16 @@ variable {R R₁ R₂ R₁₂ : Type*} [CommRing R] [CommRing R₁] [CommRing R�
   [TopologicalSpace R] [TopologicalSpace R₁] [TopologicalSpace R₂] [TopologicalSpace R₁₂]
   [Algebra R R₁] [Algebra R R₂] [Algebra R₁ R₁₂] [Algebra R₂ R₁₂] [Algebra R R₁₂]
   [IsScalarTower R R₁ R₁₂] [IsScalarTower R R₂ R₁₂]
-
 /-- On any glueing square, a flat `R`-module `N` is canonically isomorphic to the sections of
 `GlueingDatum.ofModule R₁ R₂ R₁₂ R N`. -/
 noncomputable def GlueingSquare.equivSectionsOfModule (h : GlueingSquare R R₁ R₂ R₁₂)
     (N : Type*) [AddCommGroup N] [Module R N] [Module.Flat R N] :
     N ≃ₗ[R] (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).sections R :=
   GlueingDatum.equivSectionsOfModule h.injective h.exact_sub
-
 @[simp] theorem GlueingSquare.equivSectionsOfModule_apply (h : GlueingSquare R R₁ R₂ R₁₂)
     (N : Type*) [AddCommGroup N] [Module R N] [Module.Flat R N] (n : N) :
     h.equivSectionsOfModule N n = GlueingDatum.toSectionsOfModule R₁ R₂ R₁₂ R N n := by
   simp [GlueingSquare.equivSectionsOfModule]
-
 end GlueingSquareSections
-
 end TauCeti.Huber
-
 end

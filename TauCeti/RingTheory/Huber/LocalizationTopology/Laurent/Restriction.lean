@@ -113,8 +113,8 @@ intertwines `localizationAlgHom` with the canonical lift `Away 1 →+* Away f`. 
   RingHom.congr_fun (IsLocalization.ringHom_ext (Submonoid.powers (1 : A))
     (j := (h₁.laurentLeftAlgHom h₁₂).toRingHom.comp h₁.localizationAlgHom.toRingHom)
     (k := h₁₂.localizationAlgHom.toRingHom.comp (IsLocalization.Away.lift (1 : A)
-      (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩))) (RingHom.ext fun a ↦ by
-        simp)) x
+      (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩)))
+    (RingHom.ext fun _ ↦ by simp)) x
 
 /-- Canonical continuous `A`-algebra map `B₂ →ₐ[A] B₁₂` from a model of `A⟨{1}/f⟩` to a model of
 `A⟨{f², 1}/f⟩`. -/
@@ -177,17 +177,14 @@ theorem continuous_laurentLeftAlgHom (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)}
     (x : Localization.Away (1 : A)) :
-    laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂) (@Completion.coe' _
-        (P.locUniformSpace ({f, 1} : Finset A) 1 (Localization.Away (1 : A)) hden₁) x) =
-      @Completion.coe' _
-        (P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂)
-        (IsLocalization.Away.lift (1 : A)
-          (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩) x) := by
+    laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)
+        (@Completion.coe' _ (P.locUniformSpace _ 1 _ hden₁) x) =
+      @Completion.coe' _ (P.locUniformSpace _ f _ hden₁₂) (IsLocalization.Away.lift (1 : A)
+        (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩) x) := by
   simpa only [laurentLeftAlgHom, localizationAlgHom_ratLoc] using
     (isRationalCompletion_ratLoc P {f, 1} 1
       (isOpen_span_of_one_mem (by simp))).laurentLeftAlgHom_localizationAlgHom
       (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp))) x
-
 /-- Canonical continuous `A`-algebra transition map `A⟨{1}/f⟩ →ₐ[A] A⟨{f², 1}/f⟩` between `ratLoc`
 models. -/
 noncomputable def laurentRightAlgHom (P : PairOfDefinition A) (f : A)
@@ -209,14 +206,12 @@ theorem continuous_laurentRightAlgHom (P : PairOfDefinition A) (f : A)
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)}
     (x : Localization.Away f) :
     laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)
-        (@Completion.coe' _ (P.locUniformSpace ({1} : Finset A) f (Localization.Away f) hden₂) x) =
-      @Completion.coe' _
-        (P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂) x := by
+        (@Completion.coe' _ (P.locUniformSpace _ f _ hden₂) x) =
+      @Completion.coe' _ (P.locUniformSpace _ f _ hden₁₂) x := by
   simpa only [laurentRightAlgHom, localizationAlgHom_ratLoc] using
     (isRationalCompletion_ratLoc P {1} f
       (isOpen_span_of_one_mem (by simp))).laurentRightAlgHom_localizationAlgHom
       (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp))) x
-
 /-- Canonical `A⟨{f, 1}/1⟩`-algebra structure on `A⟨{f², 1}/f⟩` induced by `laurentLeftAlgHom`. -/
 @[instance_reducible] noncomputable def laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
@@ -236,7 +231,6 @@ scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.laurentRightAlg
 
 section ScopedAPI
 open scoped TauCeti.Huber.Laurent
-
 /-- The structure map of `laurentLeftAlgebra` is `laurentLeftAlgHom`. -/
 @[simp] theorem algebraMap_laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
@@ -279,10 +273,7 @@ theorem isScalarTower_laurentRight (P : PairOfDefinition A) (f : A)
     (isOpen_span_of_one_mem (by simp))).isScalarTower_laurentRight
     (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
 scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.isScalarTower_laurentRight
-
 end ScopedAPI
 end LaurentTransition
-
 end TauCeti.Huber
-
 end
