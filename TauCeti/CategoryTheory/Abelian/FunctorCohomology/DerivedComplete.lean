@@ -37,16 +37,14 @@ modulo `a`.
   (`TauCeti.IsDerivedComplete.eq_zero_of_mem_of_subset_smul`,
   `TauCeti.IsDerivedComplete.subset_range_of_subset_range_add_smul`), applied to the comparison
   maps between the cohomology groups with their actions
-  (`CategoryTheory.Functor.extComparisonWithAction`), then show that the comparison for `β` is
-  bijective (`CategoryTheory.Functor.IsExtComparisonBijective.of_shortExact`).
+  (`CategoryTheory.Functor.extComparisonWithAction`, in
+  `TauCeti/CategoryTheory/Abelian/FunctorCohomology/Comparison.lean`), then show that the
+  comparison for `β` is bijective (`CategoryTheory.Functor.IsExtComparisonBijective.of_shortExact`).
 
-## Main definitions and results
+## Main results
 
 * `TauCeti.isDerivedComplete_extWithAction_smulEnd`: cohomology with derived complete
   coefficients is derived complete.
-* `CategoryTheory.Functor.extComparisonWithAction`: the comparison map between the cohomology
-  groups with actions, which commutes with the action of every element with which `β` commutes
-  (`CategoryTheory.Functor.extComparisonWithAction_smul`).
 * `CategoryTheory.Functor.IsExtComparisonBijective.of_shortExact`: a comparison which is bijective
   modulo `a` is bijective, when the cohomology groups are derived `a`-complete.
 
@@ -124,41 +122,6 @@ end Complete
 end TauCeti
 
 namespace CategoryTheory.Functor
-
-/-! ### Comparison maps between cohomology groups with actions -/
-
-section WithAction
-
-variable {C : Type u} [Category.{v} C] {C' : Type u'} [Category.{v'} C']
-  [HasExt.{t} (C ⥤ AddCommGrpCat.{w})] [HasExt.{t'} (C' ⥤ AddCommGrpCat.{w})]
-  {R : Type*} [Semiring R] {F : C ⥤ AddCommGrpCat.{w}} {F' : C' ⥤ AddCommGrpCat.{w}}
-  (ρ : R →+* End F) (ρ' : R →+* End F') (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F')
-  {N : C ⥤ AddCommGrpCat.{w}} {N' : C' ⥤ AddCommGrpCat.{w}} (α : N' ⟶ φ ⋙ N)
-
-/-- The comparison map `Extⁿ(N, F) ⟶ Extⁿ(N', F')` for `β` along `α`, between the cohomology
-groups with the actions `ρ` and `ρ'` of `R`. It commutes with the action of every `r ∈ R` with
-which `β` commutes (`CategoryTheory.Functor.extComparisonWithAction_smul`), so it is `R`-linear
-when `β` is `R`-equivariant. -/
-noncomputable def extComparisonWithAction (n : ℕ) :
-    ExtWithAction ρ N n →+ ExtWithAction ρ' N' n :=
-  (ExtWithAction.toExt ρ').symm.toAddMonoidHom.comp
-    ((extComparison φ β α n).comp (ExtWithAction.toExt ρ).toAddMonoidHom)
-
-/-- The comparison map between the cohomology groups with actions is the comparison map. -/
-@[simp]
-lemma toExt_extComparisonWithAction {n : ℕ} (x : ExtWithAction ρ N n) :
-    ExtWithAction.toExt ρ' (extComparisonWithAction ρ ρ' φ β α n x) =
-      extComparison φ β α n (ExtWithAction.toExt ρ x) :=
-  AddEquiv.apply_symm_apply _ _
-
-variable {ρ ρ' φ β} in
-/-- The comparison map commutes with the action of every `r` with which `β` commutes. -/
-lemma extComparisonWithAction_smul {r : R}
-    (hβ : φ.whiskerLeft (ρ r).asHom ≫ β = β ≫ (ρ' r).asHom) {n : ℕ} (x : ExtWithAction ρ N n) :
-    extComparisonWithAction ρ ρ' φ β α n (r • x) = r • extComparisonWithAction ρ ρ' φ β α n x :=
-  (ExtWithAction.toExt ρ').injective <| by simp [extComparison_comp_mk₀ φ hβ]
-
-end WithAction
 
 /-! ### The adic step -/
 

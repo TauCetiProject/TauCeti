@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.Grp.Abelian
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Map
 public import Mathlib.CategoryTheory.Abelian.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
+public import TauCeti.Algebra.Homology.DerivedCategory.Ext.WithAction
 
 /-!
 # Comparisons between cohomology theories of functors
@@ -37,6 +38,13 @@ transformation `η : φ ⟶ ψ` can be moved from the coefficients to the source
 (`CategoryTheory.Functor.extComparison_whiskerRight_comp`). The proofs rest on Mathlib's
 compatibility of `CategoryTheory.Abelian.Ext.mapExactFunctor` with composition of classes, of
 functors, with natural transformations and with extension classes.
+
+When the coefficients carry actions `ρ : R →+* End F` and `ρ' : R →+* End F'` of a semiring `R`,
+the comparison map is also a map between the cohomology groups with these actions
+(`TauCeti.Abelian.ExtWithAction`), `CategoryTheory.Functor.extComparisonWithAction`. By
+naturality in the coefficients it commutes with the action of every `r ∈ R` with which `β`
+commutes (`CategoryTheory.Functor.extComparisonWithAction_smul`), so it is `R`-linear when `β` is
+`R`-equivariant.
 
 ## References
 
@@ -137,6 +145,40 @@ lemma extComparison_comp_mk₀ (φ : C' ⥤ C) {β : φ ⋙ F ⟶ F'} {β' : φ 
   simp only [extComparison_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
     Ext.comp_assoc_of_third_deg_zero, Ext.mk₀_comp_mk₀]
   rw [whiskeringLeft_obj_map, h]
+
+/-! ### Comparison maps between cohomology groups with actions -/
+
+section WithAction
+
+open TauCeti.Abelian
+
+variable {R : Type*} [Semiring R] (ρ : R →+* End F) (ρ' : R →+* End F') (φ : C' ⥤ C)
+  (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N)
+
+/-- The comparison map `Extⁿ(N, F) ⟶ Extⁿ(N', F')` for `β` along `α`, between the cohomology
+groups with the actions `ρ` and `ρ'` of `R`. It commutes with the action of every `r ∈ R` with
+which `β` commutes (`CategoryTheory.Functor.extComparisonWithAction_smul`), so it is `R`-linear
+when `β` is `R`-equivariant. -/
+noncomputable def extComparisonWithAction (n : ℕ) :
+    ExtWithAction ρ N n →+ ExtWithAction ρ' N' n :=
+  (ExtWithAction.toExt ρ').symm.toAddMonoidHom.comp
+    ((extComparison φ β α n).comp (ExtWithAction.toExt ρ).toAddMonoidHom)
+
+/-- The comparison map between the cohomology groups with actions is the comparison map. -/
+@[simp]
+lemma toExt_extComparisonWithAction {n : ℕ} (x : ExtWithAction ρ N n) :
+    ExtWithAction.toExt ρ' (extComparisonWithAction ρ ρ' φ β α n x) =
+      extComparison φ β α n (ExtWithAction.toExt ρ x) :=
+  AddEquiv.apply_symm_apply _ _
+
+variable {ρ ρ' φ β} in
+/-- The comparison map commutes with the action of every `r` with which `β` commutes. -/
+lemma extComparisonWithAction_smul {r : R}
+    (hβ : φ.whiskerLeft (ρ r).asHom ≫ β = β ≫ (ρ' r).asHom) {n : ℕ} (x : ExtWithAction ρ N n) :
+    extComparisonWithAction ρ ρ' φ β α n (r • x) = r • extComparisonWithAction ρ ρ' φ β α n x :=
+  (ExtWithAction.toExt ρ').injective <| by simp [extComparison_comp_mk₀ φ hβ]
+
+end WithAction
 
 /-- Comparison maps commute with connecting maps. Let `S` and `S'` be short exact sequences of
 coefficients on `C` and `C'`, and let `u` be a map from the restriction of `S` along `φ` to `S'`,
