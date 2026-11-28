@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Cotangent
 public import TauCeti.RingTheory.LocalRing.ResidueField.Map
+import TauCeti.LinearAlgebra.Basis.Semilinear
 
 /-!
 # Cotangent spaces of local rings under ring equivalences
@@ -118,10 +119,7 @@ residue field. -/
 theorem finrank_cotangentSpace_eq_of_ringEquiv {R S : Type*} [CommRing R] [CommRing S]
     [IsLocalRing R] [IsLocalRing S] (σ : R ≃+* S) :
     Module.finrank (ResidueField R) (CotangentSpace R) =
-      Module.finrank (ResidueField S) (CotangentSpace S) := by
-  let e := cotangentSpaceEquiv σ
-  simpa [Module.finrank] using congrArg Cardinal.toNat
-    (lift_rank_eq_of_equiv_equiv (ResidueField.mapEquiv σ) e.toAddEquiv
-      (ResidueField.mapEquiv σ).bijective e.map_smulₛₗ)
+      Module.finrank (ResidueField S) (CotangentSpace S) :=
+  (cotangentSpaceEquiv σ).finrank_eqₛₗ
 
 end IsLocalRing
