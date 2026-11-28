@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
-public import TauCeti.MeasureTheory.Measure.Haar.DistribChar.FiniteProduct
-import TauCeti.MeasureTheory.Measure.Haar.DistribChar
+public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 
 /-!
 # Haar scaling at infinite places
@@ -35,23 +34,31 @@ theorem distribHaarChar_completion (w : InfinitePlace K) (a : w.Completionˣ) :
       { (Completion.ringEquivRealOfIsReal hw).toAddEquiv,
         (Completion.isometryEquivRealOfIsReal hw).toHomeomorph with }
     let b : ℝˣ := Units.map (Completion.ringEquivRealOfIsReal hw).toMonoidHom a
-    have he (x : w.Completion) : e (a • x) = b • e x :=
-      (Completion.ringEquivRealOfIsReal hw).map_mul a x
+    have hb : (b : ℝ) = Completion.ringEquivRealOfIsReal hw a := Units.coe_map _ a
+    have he (x : w.Completion) : e (a • x) = b • e x := by
+      -- `e` has the same underlying additive equivalence as this ring equivalence.
+      simp only [Units.smul_def, smul_eq_mul, hb]
+      exact (Completion.ringEquivRealOfIsReal hw).map_mul a x
     rw [e.distribHaarChar_eq a b he, distribHaarChar_real_eq, hw.mult_eq_one]
     simp only [Module.finrank_self, pow_one]
     apply NNReal.eq
+    rw [coe_nnNorm, coe_nnNorm, hb, Completion.ringEquivRealOfIsReal_apply]
     exact (Completion.isometry_extensionEmbeddingOfIsReal hw).norm_map_of_map_zero
       (map_zero _) a
   · let e : w.Completion ≃ₜ+ ℂ :=
       { (Completion.ringEquivComplexOfIsComplex hw).toAddEquiv,
         (Completion.isometryEquivComplexOfIsComplex hw).toHomeomorph with }
     let b : ℂˣ := Units.map (Completion.ringEquivComplexOfIsComplex hw).toMonoidHom a
-    have he (x : w.Completion) : e (a • x) = b • e x :=
-      (Completion.ringEquivComplexOfIsComplex hw).map_mul a x
+    have hb : (b : ℂ) = Completion.ringEquivComplexOfIsComplex hw a := Units.coe_map _ a
+    have he (x : w.Completion) : e (a • x) = b • e x := by
+      -- `e` has the same underlying additive equivalence as this ring equivalence.
+      simp only [Units.smul_def, smul_eq_mul, hb]
+      exact (Completion.ringEquivComplexOfIsComplex hw).map_mul a x
     rw [e.distribHaarChar_eq a b he, distribHaarChar_complex_eq, hw.mult_eq_two,
       Complex.finrank_real_complex]
     congr 1
     apply NNReal.eq
+    rw [coe_nnNorm, coe_nnNorm, hb, Completion.ringEquivComplexOfIsComplex_apply]
     exact (Completion.isometry_extensionEmbedding w).norm_map_of_map_zero (map_zero _) a
 
 end NumberField.InfinitePlace
