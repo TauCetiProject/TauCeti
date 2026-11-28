@@ -111,12 +111,39 @@ lemma fromPageMap_comp {E E' E'' : SpectralSequence C c r₀} (s : ℤ) (hs : r�
     fromPageMap s hs (f ≫ g) = fromPageMap s hs f ≫ fromPageMap s hs g :=
   (rfl)
 
+@[simp]
+lemma fromPageMap_self {E E' : SpectralSequence C c r₀} (f : E ⟶ E') :
+    fromPageMap r₀ le_rfl f = f :=
+  (rfl)
+
+@[simp]
+lemma fromPageMap_fromPageMap {E E' : SpectralSequence C c r₀} {s t : ℤ}
+    (hs : r₀ ≤ s) (hst : s ≤ t) (f : E ⟶ E') :
+    fromPageMap t hst (fromPageMap s hs f) = fromPageMap t (hs.trans hst) f :=
+  (rfl)
+
 variable (C c r₀) in
 /-- Restricting spectral sequences from page `r₀` to start on page `s ≥ r₀`, as a functor. -/
 @[expose, simps]
 def fromPageFunctor (s : ℤ) (hs : r₀ ≤ s) : SpectralSequence C c r₀ ⥤ SpectralSequence C c s where
   obj E := E.fromPage s hs
   map f := fromPageMap s hs f
+
+@[simp]
+lemma fromPageFunctor_self :
+    fromPageFunctor C c r₀ r₀ le_rfl = 𝟭 (SpectralSequence C c r₀) :=
+  Functor.ext (fun _ ↦ rfl) (fun _ _ f ↦ by
+    change fromPageMap r₀ le_rfl f = eqToHom rfl ≫ f ≫ eqToHom rfl
+    simp)
+
+@[simp]
+lemma fromPageFunctor_comp_fromPageFunctor {s t : ℤ} (hs : r₀ ≤ s) (hst : s ≤ t) :
+    fromPageFunctor C c r₀ s hs ⋙ fromPageFunctor C c s t hst =
+      fromPageFunctor C c r₀ t (hs.trans hst) :=
+  Functor.ext (fun _ ↦ rfl) (fun _ _ f ↦ by
+    change fromPageMap t hst (fromPageMap s hs f) =
+      eqToHom rfl ≫ fromPageMap t (hs.trans hst) f ≫ eqToHom rfl
+    simp)
 
 end FromPage
 

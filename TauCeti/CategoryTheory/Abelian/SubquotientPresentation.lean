@@ -42,6 +42,9 @@ pages.
 
 * `TauCeti.SubquotientPresentation A X`: a presentation of `X` as a subquotient of `A`.
 * `TauCeti.SubquotientPresentation.π`: the projection `Z ⟶ X`.
+* `TauCeti.SubquotientPresentation.πIsCokernel`: the projection is a cokernel of `B ⟶ Z`.
+* `TauCeti.SubquotientPresentation.desc`: descending a morphism out of `Z` vanishing on `B`
+  along `π` to `X`.
 * `TauCeti.SubquotientPresentation.ofEpi`: the presentation given by an epimorphism out of `Z`
   whose kernel is `B`.
 * `TauCeti.SubquotientPresentation.preimage`, `TauCeti.SubquotientPresentation.image`: transport
@@ -135,6 +138,19 @@ instance : Epi P.π := by
 @[reassoc (attr := simp)]
 lemma ofLE_π : ofLE P.B P.Z P.le ≫ P.π = 0 := by
   rw [← cokernel_π_iso_hom, cokernel.condition_assoc, zero_comp]
+
+/-- The projection `P.π` is a cokernel of the inclusion `P.B ⟶ P.Z`. -/
+noncomputable def πIsCokernel : IsColimit (CokernelCofork.ofπ P.π P.ofLE_π) :=
+  IsColimit.ofIsoColimit (cokernelIsCokernel (ofLE P.B P.Z P.le)) (Cofork.ext P.iso (by simp))
+
+/-- Descend a morphism out of `P.Z` that vanishes on `P.B` along `P.π` to `X`. -/
+noncomputable def desc (f : (P.Z : C) ⟶ Y) (hf : ofLE P.B P.Z P.le ≫ f = 0) : X ⟶ Y :=
+  (CokernelCofork.IsColimit.desc' P.πIsCokernel f hf).val
+
+@[reassoc (attr := simp)]
+lemma π_desc (f : (P.Z : C) ⟶ Y) (hf : ofLE P.B P.Z P.le ≫ f = 0) :
+    P.π ≫ P.desc f hf = f :=
+  (CokernelCofork.IsColimit.desc' P.πIsCokernel f hf).property
 
 /-- The kernel of the projection is the smaller subobject, seen inside the larger one. -/
 lemma kernelSubobject_π : kernelSubobject P.π = (Subobject.pullback P.Z.arrow).obj P.B := by
@@ -633,6 +649,7 @@ lemma isoOfEq_refl : P.isoOfEq P rfl rfl = Iso.refl X := by
 
 /-- Composing canonical isomorphisms between presentations by the same subobjects gives the
 canonical isomorphism for the outer pair. -/
+@[simp]
 lemma isoOfEq_trans {P' : SubquotientPresentation A Y} {P'' : SubquotientPresentation A W}
     (hB₁ : P.B = P'.B) (hZ₁ : P.Z = P'.Z) (hB₂ : P'.B = P''.B) (hZ₂ : P'.Z = P''.Z) :
     P.isoOfEq P' hB₁ hZ₁ ≪≫ P'.isoOfEq P'' hB₂ hZ₂ =

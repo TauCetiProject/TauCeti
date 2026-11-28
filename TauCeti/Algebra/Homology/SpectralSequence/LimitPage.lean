@@ -50,8 +50,11 @@ object vanishing on some page `r ≥ r₀` has zero limit page (`isZero_limitPag
   `CategoryTheory.SpectralSequence.boundariesSup`: the infinite cycle and boundary subobjects
   `Z_∞(pq)` and `B_∞(pq)`.
 * `CategoryTheory.SpectralSequence.limitPage`,
-  `CategoryTheory.SpectralSequence.limitPagePresentation`: the limit page object `E_∞(pq)` and
-  its subquotient presentation inside `(E.page r₀).X pq`.
+  `CategoryTheory.SpectralSequence.limitPagePresentation`,
+  `CategoryTheory.SpectralSequence.limitPageπ`,
+  `CategoryTheory.SpectralSequence.limitPageDesc`,
+  `CategoryTheory.SpectralSequence.limitPageIsCokernel`: the limit page object `E_∞(pq)`,
+  its subquotient presentation inside `(E.page r₀).X pq`, and its cokernel universal property.
 * `CategoryTheory.SpectralSequence.StabilizesAt.limitPageIso`: the canonical isomorphism
   `(E.page r).X pq ≅ E.limitPage pq` at a stabilizing position.
 * `CategoryTheory.SpectralSequence.limitPageMap`,
@@ -235,28 +238,72 @@ variable (E : SpectralSequence C c r₀) (pq : κ) [E.HasCyclesInf pq] [E.HasBou
 
 /-- The **limit page** `E_∞(pq)` of a spectral sequence `E` at position `pq`, defined as the
 subquotient `Z_∞(pq) / B_∞(pq)` inside `(E.page r₀).X pq`. -/
-@[expose] noncomputable def limitPage : C :=
+noncomputable def limitPage : C :=
   cokernel (ofLE (E.boundariesSup pq) (E.cyclesInf pq) (E.boundariesSup_le_cyclesInf pq))
 
 /-- The canonical subquotient presentation of `E.limitPage pq` inside `(E.page r₀).X pq`, by
 `B_∞(pq) ≤ Z_∞(pq)`. -/
-@[expose] noncomputable def limitPagePresentation :
+noncomputable def limitPagePresentation :
     SubquotientPresentation ((E.page r₀).X pq) (E.limitPage pq) :=
   SubquotientPresentation.quotient _ _ (E.boundariesSup_le_cyclesInf pq)
 
 @[simp]
 lemma limitPagePresentation_B : (E.limitPagePresentation pq).B = E.boundariesSup pq :=
-  (rfl)
+  SubquotientPresentation.quotient_B _ _ _
 
 @[simp]
 lemma limitPagePresentation_Z : (E.limitPagePresentation pq).Z = E.cyclesInf pq :=
-  (rfl)
+  SubquotientPresentation.quotient_Z _ _ _
 
-@[simp]
-lemma π_limitPagePresentation :
-    (E.limitPagePresentation pq).π =
-      cokernel.π (ofLE (E.boundariesSup pq) (E.cyclesInf pq) (E.boundariesSup_le_cyclesInf pq)) :=
-  SubquotientPresentation.π_quotient _ _ _
+/-- The canonical projection `Z_∞(pq) ⟶ E_∞(pq)` out of the infinite cycle subobject. -/
+noncomputable def limitPageπ : (E.cyclesInf pq : C) ⟶ E.limitPage pq :=
+  (Subobject.isoOfEq _ _ (E.limitPagePresentation_Z pq).symm).hom ≫
+    (E.limitPagePresentation pq).π
+
+@[reassoc]
+lemma limitPageπ_eq :
+    E.limitPageπ pq =
+      ofLE _ _ (E.limitPagePresentation_Z pq).ge ≫ (E.limitPagePresentation pq).π := by
+  rw [limitPageπ, Subobject.isoOfEq_hom]
+
+instance : Epi (E.limitPageπ pq) := by
+  rw [limitPageπ]
+  infer_instance
+
+@[reassoc (attr := simp)]
+lemma ofLE_limitPageπ :
+    ofLE (E.boundariesSup pq) (E.cyclesInf pq) (E.boundariesSup_le_cyclesInf pq) ≫
+      E.limitPageπ pq = 0 := by
+  rw [limitPageπ, Subobject.isoOfEq_hom, ← Category.assoc, ofLE_comp_ofLE,
+    ← ofLE_comp_ofLE _ _ _ (E.limitPagePresentation_B pq).ge (E.limitPagePresentation pq).le,
+    Category.assoc, SubquotientPresentation.ofLE_π, comp_zero]
+
+/-- Descend a morphism out of `Z_∞(pq)` that vanishes on `B_∞(pq)` to `E_∞(pq)`. -/
+noncomputable def limitPageDesc {Y : C} (f : (E.cyclesInf pq : C) ⟶ Y)
+    (hf : ofLE (E.boundariesSup pq) (E.cyclesInf pq) (E.boundariesSup_le_cyclesInf pq) ≫ f = 0) :
+    E.limitPage pq ⟶ Y :=
+  (E.limitPagePresentation pq).desc
+    ((Subobject.isoOfEq _ _ (E.limitPagePresentation_Z pq).symm).inv ≫ f)
+    (by
+      rw [Subobject.isoOfEq_inv, ← Category.assoc, ofLE_comp_ofLE,
+        ← ofLE_comp_ofLE _ _ _ (E.limitPagePresentation_B pq).le
+          (E.boundariesSup_le_cyclesInf pq),
+        Category.assoc, hf, comp_zero])
+
+@[reassoc (attr := simp)]
+lemma limitPageπ_desc {Y : C} (f : (E.cyclesInf pq : C) ⟶ Y)
+    (hf : ofLE (E.boundariesSup pq) (E.cyclesInf pq) (E.boundariesSup_le_cyclesInf pq) ≫ f = 0) :
+    E.limitPageπ pq ≫ E.limitPageDesc pq f hf = f := by
+  rw [limitPageπ, Category.assoc, limitPageDesc, SubquotientPresentation.π_desc,
+    Iso.hom_inv_id_assoc]
+
+/-- `E.limitPageπ pq` is a cokernel of the inclusion `B_∞(pq) ⟶ Z_∞(pq)`. -/
+noncomputable def limitPageIsCokernel :
+    IsColimit (CokernelCofork.ofπ (E.limitPageπ pq) (E.ofLE_limitPageπ pq)) :=
+  CokernelCofork.IsColimit.ofπ _ _
+    (fun f hf ↦ E.limitPageDesc pq f hf)
+    (fun f hf ↦ E.limitPageπ_desc pq f hf)
+    (fun f hf m hm ↦ by rw [← cancel_epi (E.limitPageπ pq), hm, E.limitPageπ_desc])
 
 end LimitPage
 
@@ -437,8 +484,9 @@ noncomputable def limitPageMap (f : E ⟶ E') (pq : κ)
     [E.HasCyclesInf pq] [E.HasBoundariesSup pq]
     [E'.HasCyclesInf pq] [E'.HasBoundariesSup pq] :
     E.limitPage pq ⟶ E'.limitPage pq :=
-  cokernel.map _ _ (boundariesSupMap f pq) (cyclesInfMap f pq)
-    (boundariesSupMap_comp_ofLE f pq).symm
+  E.limitPageDesc pq (cyclesInfMap f pq ≫ E'.limitPageπ pq) (by
+    rw [← Category.assoc, boundariesSupMap_comp_ofLE, Category.assoc,
+      E'.ofLE_limitPageπ pq, comp_zero])
 
 /-- A morphism `f : E ⟶ E'` maps `E.limitPagePresentation pq` to `E'.limitPagePresentation pq`,
 through its first-page component and over `limitPageMap f pq`. -/
@@ -446,20 +494,23 @@ lemma limitPagePresentation_mapsTo (f : E ⟶ E') (pq : κ)
     [E.HasCyclesInf pq] [E.HasBoundariesSup pq]
     [E'.HasCyclesInf pq] [E'.HasBoundariesSup pq] :
     (E.limitPagePresentation pq).MapsTo (E'.limitPagePresentation pq) ((f.hom r₀).f pq)
-      (limitPageMap f pq) :=
-  SubquotientPresentation.mapsTo_iff.2 ⟨cyclesInfMap f pq, cyclesInfMap_arrow f pq, by
-    simp only [π_limitPagePresentation, limitPageMap, cokernel.map]
-    exact (cokernel.π_desc _ _ _).symm⟩
+      (limitPageMap f pq) := by
+  refine SubquotientPresentation.mapsTo_iff.2
+    ⟨(Subobject.isoOfEq _ _ (E.limitPagePresentation_Z pq)).hom ≫ cyclesInfMap f pq ≫
+      (Subobject.isoOfEq _ _ (E'.limitPagePresentation_Z pq).symm).hom,
+      by simp [cyclesInfMap_arrow], ?_⟩
+  rw [limitPageMap, limitPageDesc, SubquotientPresentation.π_desc, limitPageπ,
+    Subobject.isoOfEq_inv, Subobject.isoOfEq_hom, Category.assoc, Category.assoc]
 
 @[simp]
 lemma limitPageMap_id (E : SpectralSequence C c r₀) (pq : κ)
     [E.HasCyclesInf pq] [E.HasBoundariesSup pq] :
     limitPageMap (𝟙 E) pq = 𝟙 (E.limitPage pq) := by
-  rw [← cancel_epi (E.limitPagePresentation pq).π]
+  rw [← cancel_epi (E.limitPageπ pq), limitPageMap, limitPageπ_desc, Category.comp_id]
   have h : cyclesInfMap (𝟙 E) pq = 𝟙 _ := by
     rw [← cancel_mono (E.cyclesInf pq).arrow, cyclesInfMap_arrow, Category.id_comp, id_hom,
       HomologicalComplex.id_f, Category.comp_id]
-  simp [limitPageMap, limitPage, h]
+  rw [h, Category.id_comp]
 
 @[simp, reassoc]
 lemma limitPageMap_comp {E'' : SpectralSequence C c r₀} (f : E ⟶ E') (g : E' ⟶ E'') (pq : κ)
@@ -494,19 +545,6 @@ lemma StabilizesAt.limitPageIso_hom_comp_limitPageMap (f : E ⟶ E') {s : ℤ}
 
 section Iso
 
-private lemma map_pageFunctor_isoApp_inv (e : E ≅ E') (pq : κ)
-    (S : Subobject ((E'.page r₀).X pq)) :
-    (Subobject.map (HomologicalComplex.Hom.isoApp
-        ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq).inv).obj S =
-      (Subobject.pullback ((e.hom.hom r₀).f pq)).obj S := by
-  let φ := HomologicalComplex.Hom.isoApp ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq
-  have hS : (Subobject.map φ.hom).obj ((Subobject.map φ.inv).obj S) = S :=
-    (Subobject.mapIsoToOrderIso φ).right_inv S
-  have hφ : φ.hom = (e.hom.hom r₀).f pq := by simp [φ]
-  rw [← hφ]
-  conv_rhs => rw [← hS]
-  exact (Subobject.pullback_map_self _ _).symm
-
 private lemma pullback_cyclesSet_of_iso (e : E ≅ E') (pq : κ) :
     (Subobject.mapIsoToOrderIso
         (HomologicalComplex.Hom.isoApp ((pageFunctor C c r₀ r₀ le_rfl).mapIso e) pq).symm) ''
@@ -514,7 +552,8 @@ private lemma pullback_cyclesSet_of_iso (e : E ≅ E') (pq : κ) :
       E.cyclesSet pq := by
   ext S
   simp only [pageFunctor_obj, Set.mem_image, mem_cyclesSet_iff, Subobject.mapIsoToOrderIso_apply,
-    Iso.symm_hom, map_pageFunctor_isoApp_inv]
+    Iso.symm_hom, ← Subobject.pullback_hom_eq_map_inv, HomologicalComplex.Hom.isoApp_hom,
+    Functor.mapIso_hom, pageFunctor_map]
   constructor
   · rintro ⟨T, ⟨r, hr, rfl⟩, rfl⟩
     exact ⟨r, hr, (E.pullback_cyclesSubobject_of_iso pq e r hr).symm⟩
@@ -528,7 +567,8 @@ private lemma pullback_boundariesSet_of_iso (e : E ≅ E') (pq : κ) :
       E.boundariesSet pq := by
   ext S
   simp only [pageFunctor_obj, Set.mem_image, mem_boundariesSet_iff,
-    Subobject.mapIsoToOrderIso_apply, Iso.symm_hom, map_pageFunctor_isoApp_inv]
+    Subobject.mapIsoToOrderIso_apply, Iso.symm_hom, ← Subobject.pullback_hom_eq_map_inv,
+    HomologicalComplex.Hom.isoApp_hom, Functor.mapIso_hom, pageFunctor_map]
   constructor
   · rintro ⟨T, ⟨r, hr, rfl⟩, rfl⟩
     exact ⟨r, hr, (E.pullback_boundariesSubobject_of_iso pq e r hr).symm⟩
@@ -773,6 +813,48 @@ lemma limitPageFromPageIso_hom_comp_limitPageMap {E' : SpectralSequence C c r₀
   rw [fromPageMap_hom] at hmaps
   exact ((E.pagePresentation_mapsTo pq f s hs).trans hmaps).isoOfEq_hom
     (E.limitPagePresentation_mapsTo f pq) _ _ _ _
+
+/-- Rebasing at the initial page `r₀` gives the identity isomorphism on `E.limitPage pq`. -/
+@[simp]
+lemma limitPageFromPageIso_self [E.HasCyclesInf pq] [E.HasBoundariesSup pq] :
+    E.limitPageFromPageIso pq r₀ le_rfl = Iso.refl (E.limitPage pq) := by
+  have hP : (E.pagePresentation pq r₀ le_rfl).trans
+      ((E.fromPage r₀ le_rfl).limitPagePresentation pq) = E.limitPagePresentation pq := by
+    rw [pagePresentation_self, SubquotientPresentation.refl_trans]
+  ext
+  rw [← cancel_epi ((E.pagePresentation pq r₀ le_rfl).trans
+    ((E.fromPage r₀ le_rfl).limitPagePresentation pq)).π, π_limitPageFromPageIso_hom,
+    Iso.refl_hom, Category.comp_id, ← SubquotientPresentation.ofLE_π_eq hP le_rfl, ofLE_refl,
+    Category.id_comp]
+
+/-- Successive rebasing on limit pages agrees with direct rebasing. -/
+@[simp]
+lemma limitPageFromPageIso_trans {s t : ℤ} (hs : r₀ ≤ s) (hst : s ≤ t)
+    [E.HasCyclesInf pq] [E.HasBoundariesSup pq] :
+    (E.fromPage s hs).limitPageFromPageIso pq t hst ≪≫ E.limitPageFromPageIso pq s hs =
+      E.limitPageFromPageIso pq t (hs.trans hst) := by
+  have hP : (E.pagePresentation pq t (hs.trans hst)).trans
+      ((E.fromPage t (hs.trans hst)).limitPagePresentation pq) =
+      (E.pagePresentation pq s hs).trans
+        (((E.fromPage s hs).pagePresentation pq t hst).trans
+          (((E.fromPage s hs).fromPage t hst).limitPagePresentation pq)) := by
+    rw [← E.pagePresentation_trans_fromPage pq s hs t hst, SubquotientPresentation.trans_assoc]
+  ext
+  rw [← cancel_epi ((E.pagePresentation pq t (hs.trans hst)).trans
+    ((E.fromPage t (hs.trans hst)).limitPagePresentation pq)).π,
+    π_limitPageFromPageIso_hom, Iso.trans_hom, ← Category.id_comp
+    ((E.pagePresentation pq t (hs.trans hst)).trans _).π, ← ofLE_refl _]
+  rw [SubquotientPresentation.ofLE_π_eq hP le_rfl, SubquotientPresentation.π_trans',
+    ofLE_comp_ofLE_assoc, Category.assoc, Category.assoc,
+    reassoc_of% ((E.fromPage s hs).π_limitPageFromPageIso_hom pq t hst),
+    SubquotientPresentation.preimageπ_ofLE_assoc, ofLE_comp_ofLE_assoc,
+    ← ofLE_comp_ofLE _ ((E.pagePresentation pq s hs).trans
+      ((E.fromPage s hs).limitPagePresentation pq)).Z _
+      (by simp [E.preimage_fromPage_cyclesInf]) (SubquotientPresentation.trans_Z _ _).le,
+    Category.assoc,
+    reassoc_of% (SubquotientPresentation.π_trans' (E.pagePresentation pq s hs)
+      ((E.fromPage s hs).limitPagePresentation pq)).symm,
+    π_limitPageFromPageIso_hom, ofLE_comp_ofLE_assoc]
 
 end Rebase
 

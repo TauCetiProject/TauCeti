@@ -314,27 +314,6 @@ lemma StabilizesAt.pageXIso_add_one (h : E.StabilizesAt pq s) (r : ℤ) (hr : r�
         E.iso r (r + 1) pq rfl hr :=
   Int.leInduction_add_one _ _ r hsr
 
-/-- `(K.sc pq).g` is `K.d pq (c'.next pq)`, which is definitionally `K.dFrom pq` via the `abbrev`
-`HomologicalComplex.dFrom`. -/
-private lemma sc_g_eq_dFrom {c' : ComplexShape κ} (K : HomologicalComplex C c') (pq : κ) :
-    (K.sc pq).g = K.dFrom pq :=
-  HomologicalComplex.shortComplexFunctor_obj_g C c' pq K
-
-private lemma π_comp_iCyclesIso_inv {A : C} {c' : ComplexShape κ} {K : HomologicalComplex C c'}
-    (pq : κ) (P : SubquotientPresentation A (K.X pq)) (hFrom : K.dFrom pq = 0) :
-    P.π ≫ (K.iCyclesIso pq (c'.next pq) rfl hFrom).inv =
-      Subobject.ofLE _ _ (by
-        rw [sc_g_eq_dFrom, hFrom, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
-        P.preimageπ (kernelSubobject (K.sc pq).g) ≫
-        (K.sc pq).kernelSubobjectIsoCycles.hom := by
-  rw [← cancel_mono (K.iCycles pq), Category.assoc, Category.assoc, Category.assoc,
-    HomologicalComplex.iCyclesIso_inv_hom_id, Category.comp_id]
-  -- `(K.sc pq).iCycles` is definitionally `K.iCycles pq`.
-  dsimp only [HomologicalComplex.iCycles]
-  rw [ShortComplex.kernelSubobjectIsoCycles_hom_iCycles,
-    SubquotientPresentation.preimageπ_arrow, Subobject.ofLE_comp_ofLE_assoc,
-    Subobject.ofLE_refl, Category.id_comp]
-
 private lemma pageXIso_step_eq_isoOfEq (r : ℤ) (hr : r₀ ≤ r) (hFrom : (E.page r hr).dFrom pq = 0)
     (hTo : (E.page r hr).dTo pq = 0)
     (hB : (E.pagePresentation pq r hr).B =
@@ -344,9 +323,11 @@ private lemma pageXIso_step_eq_isoOfEq (r : ℤ) (hr : r₀ ≤ r) (hFrom : (E.p
     (E.page r hr).XIsoHomologyOfDEqZero pq hTo hFrom ≪≫ E.iso r (r + 1) pq rfl hr =
       (E.pagePresentation pq r hr).isoOfEq
         (E.pagePresentation pq (r + 1) (Int.le_add_one hr)) hB hZ := by
+  have hg : ((E.page r hr).sc pq).g = 0 :=
+    (HomologicalComplex.shortComplexFunctor_obj_g C (c r) pq (E.page r hr)).trans hFrom
   have hπ' : Subobject.ofLE _ _ hZ.le ≫ (E.pagePresentation pq (r + 1) (Int.le_add_one hr)).π =
       Subobject.ofLE _ _ (by
-        rw [sc_g_eq_dFrom, hFrom, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
+        rw [hg, kernelSubobject_zero, SubquotientPresentation.preimage_top]) ≫
         (E.pagePresentation pq r hr).preimageπ (kernelSubobject ((E.page r hr).sc pq).g) ≫
         ((E.page r hr).sc pq).kernelSubobjectIsoCycles.hom ≫
         ((E.page r hr).sc pq).homologyπ ≫ (E.iso r (r + 1) pq rfl hr).hom := by
@@ -356,13 +337,17 @@ private lemma pageXIso_step_eq_isoOfEq (r : ℤ) (hr : r₀ ≤ r) (hFrom : (E.p
       SubquotientPresentation.preimageπ_ofLE_assoc (E.pagePresentation pq r hr)
         (ShortComplex.homologyPresentation_Z ((E.page r hr).sc pq)).le]
     simp only [Category.assoc, Subobject.ofLE_comp_ofLE_assoc]
+  have hinv : ((E.page r hr).iCyclesIso pq ((c r).next pq) rfl hFrom).inv =
+      (((E.page r hr).sc pq).cyclesIsoX₂ hg).inv := by
+    rw [← cancel_mono ((E.page r hr).iCycles pq), HomologicalComplex.iCyclesIso_inv_hom_id]
+    exact (ShortComplex.cyclesIsoX₂_inv_hom_id _ hg).symm
   ext
   rw [← cancel_epi (E.pagePresentation pq r hr).π, SubquotientPresentation.π_isoOfEq_hom, hπ',
-    Iso.trans_hom, HomologicalComplex.XIsoHomologyOfDEqZero_hom]
+    Iso.trans_hom, HomologicalComplex.XIsoHomologyOfDEqZero_hom, hinv]
   -- `((E.page r hr).sc pq).homologyπ` is definitionally `(E.page r hr).homologyπ pq`.
   dsimp only [HomologicalComplex.homologyπ]
   simp only [← Category.assoc]
-  rw [π_comp_iCyclesIso_inv pq (E.pagePresentation pq r hr) hFrom]
+  rw [ShortComplex.π_comp_cyclesIsoX₂_inv _ (E.pagePresentation pq r hr) hg]
   simp only [Category.assoc]
 
 /-- `StabilizesAt.pageXIso` coincides with the canonical isomorphism between subquotient
