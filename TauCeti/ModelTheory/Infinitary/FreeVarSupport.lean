@@ -185,6 +185,14 @@ theorem freeVarSupport_exs (φ : L.BoundedFormulaInf ι α n) :
   | zero => rw [exs_zero]
   | succ n ih => rw [exs_succ, ih, freeVarSupport_ex]
 
+/-- Existentially closing the last `k` bound-variable slots keeps the support. -/
+@[simp]
+theorem freeVarSupport_exsLast {k : ℕ} (φ : L.BoundedFormulaInf ι α (n + k)) :
+    (exsLast φ).freeVarSupport = φ.freeVarSupport := by
+  induction k with
+  | zero => rw [exsLast_zero]
+  | succ k ih => rw [exsLast_succ, ih, freeVarSupport_ex]
+
 /-! ### Bound-variable relabelling, weakening and carrier transport -/
 
 /-- Relabelling the bound-variable slots keeps the support. -/

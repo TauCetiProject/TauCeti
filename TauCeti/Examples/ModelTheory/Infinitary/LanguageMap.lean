@@ -28,9 +28,9 @@ module, through public statements only:
 * language maps and language equivalences commute with mixed free/bound `relabel`, `exs`,
   `exsLast`, `toFormula` and `inst`, and preserve atomicity, quantifier rank and free-variable
   support;
-* `addConstants` preserves `constantSupport` and commutes with `constantsVarsEquiv` and
-  `abstractConst`, while `lhomWithConstantsMap` maps `constantSupport` to its image and translates
-  `constantsVarsEquiv` into variable substitution.
+* `addConstants` on language maps and language equivalences preserves `constantSupport` and
+  commutes with `constantsVarsEquiv` and `abstractConst`, while `lhomWithConstantsMap` maps
+  `constantSupport` to its image and translates `constantsVarsEquiv` into variable substitution.
 -/
 
 universe u v u' v' uι w
@@ -133,4 +133,23 @@ example {L : Language.{u, v}} {L' : Language.{u', v'}} (g : L →ᴸ L') {ι : T
           (Term.var ∘ Sum.map f id) ∧
       (g.addConstants ℕ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ) =
         BoundedFormulaInf.abstractConst c ((g.addConstants ℕ).onBoundedFormulaInf φ) := by
+  simp
+
+-- Lifting a language equivalence by `LEquiv.addConstants` maps added constant terms to added
+-- constant terms, commutes with single-constant abstraction followed by existential quantification,
+-- and preserves `constantSupport`, while finitary `constantsVarsEquiv`, `relabel` and `toFormula`
+-- commute with `addConstants`.
+example {L : Language.{u, v}} {L' : Language.{u', v'}} (e : L ≃ᴸ L')
+    {ι : Type uι} {α β γ : Type*} [DecidableEq γ] {m n : ℕ} (c : γ)
+    (φ : L[[γ]].FormulaInf ι α) (ψ : L[[γ]].BoundedFormula α n) (ρ : γ ⊕ α → β ⊕ Fin m) :
+    (e.addConstants γ).toLHom.onTerm ((L.con c).term : L[[γ]].Term α) = (L'.con c).term ∧
+      (e.addConstants γ).onBoundedFormulaInf (BoundedFormulaInf.abstractConst c φ).ex =
+        (BoundedFormulaInf.abstractConst c ((e.addConstants γ).onBoundedFormulaInf φ)).ex ∧
+      ((e.addConstants γ).onBoundedFormulaInf
+        (BoundedFormulaInf.abstractConst c φ)).constantSupport =
+        φ.constantSupport \ {c} ∧
+      ((BoundedFormula.constantsVarsEquiv
+        (((e.addConstants γ).toLHom).onBoundedFormula ψ)).relabel ρ).toFormula =
+        (e.toLHom.onBoundedFormula
+          ((BoundedFormula.constantsVarsEquiv ψ).relabel ρ)).toFormula := by
   simp
