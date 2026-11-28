@@ -120,16 +120,11 @@ work and are reported separately from build silence.
 
 How many pull requests are waiting to land, and how large are the batches bors tests?
 These timelines show up to the last thirty days, including the current partial UTC day.
-The backlog counts distinct PRs in the recorded ready-to-merge snapshots, including PRs
-being tested. The label is a readiness hint; admission still checks the current head's CI,
-reviews and scope. Missing observations leave gaps, and the line stops at the last sample.
-Initial candidate scans after a bot restart are omitted when their incompleteness is recorded.
-Older snapshots without that marker can briefly undercount.
-The latest complete count and its snapshot time appear below the chart. "Chart published"
-is when the chart was generated; its newest complete snapshot can be older, especially
-while a new scan is incomplete. During later scans, bors may reuse the previous complete
-snapshot. The ready-labelled backlog can differ from the active-batch total reported by
-`tauceti-fleet status`, which counts PRs already assigned to bors batches.
+The backlog counts distinct PRs accepted by ai-merge-queue, including waiting inputs and
+active batches being tested or repaired. Landed and withdrawn work is excluded.
+Historical bors points count ready-labelled candidates; reconstructed queue history is
+labelled on the chart. Missing observations leave gaps. The latest count and snapshot
+time identify the newest complete sample; chart publication can happen later.
 
 :::blob queueSizeGraph
 :::
