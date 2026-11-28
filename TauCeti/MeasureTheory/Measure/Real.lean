@@ -28,6 +28,8 @@ determines the measure outright.
 
 * `MeasureTheory.Measure.measureReal_le_sum_div_of_le` — a bound by a finite sum divided by a
   nonzero constant passes to real-valued measures when each summand is finite;
+* `MeasureTheory.Measure.dist_real_inter_le_of_subset` — for nested sets `A ⊆ B` with `A`
+  null-measurable and `μ B ≠ ∞`, the variation of `μ.real (s ∩ ·)` is bounded by that of `μ.real`;
 * `MeasureTheory.sum_measureReal_preimage_singleton_inter` — the measurable fibres of a map into
   a finite type split the mass of every set of finite measure;
 * `MeasureTheory.measureReal_iUnion` — the real measure is countably additive on disjoint
@@ -57,6 +59,30 @@ open MeasureTheory Set
 open scoped Pointwise ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- For nested sets `A ⊆ B` with `A` null-measurable and `μ B ≠ ∞`, the distance between
+`μ.real (s ∩ A)` and `μ.real (s ∩ B)` is at most `dist (μ.real A) (μ.real B)`, without any
+measurability assumption on `s`. -/
+theorem dist_real_inter_le_of_subset {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    (s : Set α) {A B : Set α} (hAB : A ⊆ B) (hA : NullMeasurableSet A μ) (hB : μ B ≠ ∞) :
+    dist (μ.real (s ∩ A)) (μ.real (s ∩ B)) ≤ dist (μ.real A) (μ.real B) := by
+  have hmono : μ.real (s ∩ A) ≤ μ.real (s ∩ B) :=
+    measureReal_mono (inter_subset_inter_right _ hAB)
+      (measure_ne_top_of_subset inter_subset_right hB)
+  have hball : μ.real A ≤ μ.real B := measureReal_mono hAB hB
+  have hdiff : μ.real (s ∩ B) - μ.real (s ∩ A) ≤ μ.real B - μ.real A := by
+    calc
+      μ.real (s ∩ B) - μ.real (s ∩ A)
+          ≤ μ.real ((s ∩ B) \ (s ∩ A)) :=
+        le_measureReal_sdiff (measure_ne_top_of_subset (inter_subset_right.trans hAB) hB)
+      _ ≤ μ.real (B \ A) :=
+        measureReal_mono (fun _ ⟨⟨hys, hyB⟩, hy⟩ => ⟨hyB, fun hyA => hy ⟨hys, hyA⟩⟩)
+          (measure_ne_top_of_subset sdiff_subset hB)
+      _ = μ.real B - μ.real A := by
+        rw [← measureReal_inter_add_sdiff₀ (s := B) hA hB, inter_eq_self_of_subset_right hAB]
+        ring
+  simp only [Real.dist_eq, abs_of_nonpos (sub_nonpos.2 hmono), abs_of_nonpos (sub_nonpos.2 hball)]
+  linarith
 
 /-- A bound by a finite sum of measures divided by a nonzero constant passes to real-valued
 measures when each summand is finite. -/

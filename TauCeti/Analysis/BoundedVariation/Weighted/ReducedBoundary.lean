@@ -80,7 +80,7 @@ theorem weightedPerimeter_eq_lintegral_essentialBoundary_inter (hW : ContDiff �
       ∫⁻ x in essentialBoundary volume s ∩ Ω, ENNReal.ofReal (Real.exp (-W x))
         ∂μHE[finrank ℝ E - 1] := by
   rw [weightedPerimeter_eq_lintegral_reducedBoundary hW hn hu hfin,
-    setLIntegral_congr (essentialBoundary_inter_ae_eq_reducedBoundary hn hu hfin)]
+    setLIntegral_congr (essentialBoundary_inter_ae_eq_reducedBoundary hu hfin)]
 
 /-- **Finite weighted perimeter gives locally finite perimeter.** For a `C¹` weight `W`, a
 null-measurable set `s` of finite weighted perimeter in `Ω` has locally finite perimeter there:

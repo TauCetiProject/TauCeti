@@ -13,6 +13,7 @@ import TauCeti.Analysis.BoundedVariation.Dilation
 import TauCeti.Analysis.BoundedVariation.HalfSpace
 import TauCeti.Analysis.BoundedVariation.Hyperplane
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
+import TauCeti.Analysis.BoundedVariation.OneDimensional.ReducedBoundary
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Group.Integral
@@ -23,6 +24,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -39,9 +41,10 @@ and fills a definite proportion of every ball around the origin together with it
 that the distributional derivative of `χ_{s_{x,r}}` points in the direction `-ν` up to an error that
 vanishes in the limit. In dimension at least two these combine into the **blow-up theorem** of De
 Giorgi's structure theorem: the blow-ups converge locally in measure to the half-space
-`{y | ⟪y, ν⟫ < 0}`, and consequently `s` has density one half at `x`. The perimeters of the
-blow-ups in the unit ball converge to that of the half-space, which gives the density of the
-perimeter measure `|Dχ_s|` at `x`.
+`{y | ⟪y, ν⟫ < 0}`, and consequently (together with the one-dimensional case) `s` has density one
+half at `x` in every dimension. Also in dimension at least two, the perimeters of the blow-ups in
+the unit ball converge to that of the half-space, which gives the density of the perimeter measure
+`|Dχ_s|` at `x`.
 
 * The scaling identities `TauCeti.perimeter_ball_zero_preimage_add_smul` and
   `MeasureTheory.Measure.addHaar_preimage_add_smul_inter_ball`, proved with the other dilation
@@ -93,8 +96,8 @@ perimeter measure `|Dχ_s|` at `x`.
   theorem.** In dimension `n ≥ 2`, `μ((s_{x,r} ∆ {y | ⟪y, ν⟫ < 0}) ∩ K) → 0` as `r → 0⁺` for
   every compact `K`. Every sequence of radii has a subsequence along which the blow-ups converge,
   and the limit is always the same half-space.
-* `TauCeti.hasDensityAt_of_mem_reducedBoundary`: in dimension `n ≥ 2`, `s` has density one half at
-  every point of its reduced boundary, the density of the half-space at the origin.
+* `TauCeti.hasDensityAt_of_mem_reducedBoundary`: `s` has density one half at every point of its
+  reduced boundary, the density of the limiting half-space at the origin.
 * `TauCeti.perimeter_setOf_inner_lt_le_liminf`: in dimension `n ≥ 2`, by lower semicontinuity,
   `P({y | ⟪y, ν⟫ < 0}; V) ≤ liminf_{r → 0⁺} P(s_{x,r}; V)` in every bounded open set `V`.
 
@@ -717,11 +720,9 @@ theorem tendsto_measure_preimage_add_smul_symmDiff_setOf_inner_lt_inter
   exact ⟨φ, (hconv K hK).congr fun j =>
     measure_congr (EventuallyEqSet.inter (EventuallyEqSet.symmDiff .rfl hH) .rfl)⟩
 
-/-- **Points of the reduced boundary have density one half.** Let `E` have dimension `n ≥ 2` and
-let `μ` be an additive Haar measure. At every point `x` of the reduced boundary of `s` in `Ω`,
-
-`μ(s ∩ closedBall x r) / μ(closedBall x r) → 1 / 2`     as `r → 0⁺`. -/
-theorem hasDensityAt_of_mem_reducedBoundary (hn : 2 ≤ finrank ℝ E)
+/-- In dimension `n ≥ 2`, blow-up convergence to the half-space gives density `1 / 2` at every
+point of `∂*s`. -/
+private theorem hasDensityAt_of_mem_reducedBoundary_of_two_le (hn : 2 ≤ finrank ℝ E)
     (hx : x ∈ reducedBoundary μ Ω s) : HasDensityAt μ s x (1 / 2) := by
   set ν := outerNormal μ Ω s x
   have hν : ν ≠ 0 := norm_ne_zero_iff.1 (by simp [ν, norm_outerNormal hx])
@@ -761,6 +762,19 @@ theorem hasDensityAt_of_mem_reducedBoundary (hn : 2 ≤ finrank ℝ E)
     Measure.addHaar_preimage_add_smul_inter_closedBall μ x hr.ne', abs_of_pos hr, mul_one,
     ← ENNReal.mul_div_mul_left _ _ (left_ne_zero_of_mul_eq_one hc) ENNReal.ofReal_ne_top]
   rw [← mul_assoc, hc, one_mul]
+
+/-- **Points of the reduced boundary have density one half.** Against an additive Haar measure on a
+finite-dimensional real inner product space, at every point `x` of the reduced boundary of `s` in
+`Ω`,
+
+`μ(s ∩ closedBall x r) / μ(closedBall x r) → 1 / 2`     as `r → 0⁺`. -/
+theorem hasDensityAt_of_mem_reducedBoundary
+    (hx : x ∈ reducedBoundary μ Ω s) : HasDensityAt μ s x (1 / 2) := by
+  rcases lt_or_ge (finrank ℝ E) 2 with hn | hn
+  · rcases subsingleton_or_finrank_eq_one_of_le_one (Nat.lt_succ_iff.1 hn) with _ | h1
+    · simp at hx
+    · exact hasDensityAt_of_mem_reducedBoundary_of_finrank_eq_one h1 hx
+  · exact hasDensityAt_of_mem_reducedBoundary_of_two_le hn hx
 
 /-! ### The density of the perimeter measure at the reduced boundary -/
 

@@ -99,13 +99,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {ι : Type*} {s : ι → Set E}
 
-/-- **The interfaces of a partition.** Let `E` have dimension `n ≥ 2`, and let `(s i)_{i ∈ ι}` be
-finitely many pairwise almost disjoint null-measurable sets covering `E` up to a null set, each of
-locally finite perimeter in an open set `Ω`. For every finite set `S` of indices,
-`Hⁿ⁻¹`-almost every point of the reduced boundary of `⋃_{i ∈ S} s i` in `Ω` lies in
-`∂*s i ∩ ∂*s j` for exactly one pair `i ∈ S`, `j ∉ S`. -/
+/-- **The interfaces of a partition.** Let `(s i)_{i ∈ ι}` be finitely many pairwise almost
+disjoint null-measurable sets covering `E` up to a null set, each of locally finite perimeter in an
+open set `Ω`. For every finite set `S` of indices, `Hⁿ⁻¹`-almost every point of the reduced boundary
+of `⋃_{i ∈ S} s i` in `Ω` lies in `∂*s i ∩ ∂*s j` for exactly one pair `i ∈ S`, `j ∉ S`. -/
 theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Finite ι]
-    (hn : 2 ≤ finrank ℝ E) (hm : ∀ i, NullMeasurableSet (s i) μ)
+    (hm : ∀ i, NullMeasurableSet (s i) μ)
     (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j))
     (hcov : μ (⋃ i, s i)ᶜ = 0)
     (hfin : ∀ i K, IsCompact K → K ⊆ Ω →
@@ -119,13 +118,13 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
   -- The indicator of a null-measurable set is locally integrable.
   have hu (i : ι) : LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ :=
     locallyIntegrableOn_indicator_const ((hm i).mono Measure.restrict_le_self) 1
-  filter_upwards [ae_forall_exists_hasDensityAt hn hu hfin] with x hx hxS
+  filter_upwards [ae_forall_exists_hasDensityAt hu hfin] with x hx hxS
   choose d hd01 hdens hdhalf using hx (reducedBoundary_subset hxS)
   -- The cells in `S` have densities adding up to `1/2`, all cells densities adding up to `1`.
   have hS : ∑ i ∈ S, d i = 1 / 2 :=
     (HasDensityAt.biUnion_finset (fun i _ => hdens i) (fun i _ j _ => hd i j)
       fun i _ => hm i).unique
-      (hasDensityAt_of_mem_reducedBoundary hn hxS)
+      (hasDensityAt_of_mem_reducedBoundary hxS)
   have hall : ∑ i, d i = 1 := sum_eq_one_of_hasDensityAt hm hd hcov hdens
   have hT : ∑ i ∈ Finset.univ.filter (· ∉ S), d i = 1 / 2 := by
     have h := Finset.sum_filter_add_sum_filter_not Finset.univ (· ∈ S) d
@@ -146,7 +145,7 @@ theorem ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion [Fini
 `TauCeti.ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion`, `Hⁿ⁻¹`-almost no
 point lies in the reduced boundaries of three distinct cells. -/
 theorem ae_notMem_reducedBoundary_of_mem_reducedBoundary_of_mem_reducedBoundary [Finite ι]
-    (hn : 2 ≤ finrank ℝ E) (hm : ∀ i, NullMeasurableSet (s i) μ)
+    (hm : ∀ i, NullMeasurableSet (s i) μ)
     (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j))
     (hcov : μ (⋃ i, s i)ᶜ = 0)
     (hfin : ∀ i K, IsCompact K → K ⊆ Ω →
@@ -158,7 +157,7 @@ theorem ae_notMem_reducedBoundary_of_mem_reducedBoundary_of_mem_reducedBoundary 
   have := Fintype.ofFinite ι
   have hu (i : ι) : LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ :=
     locallyIntegrableOn_indicator_const ((hm i).mono Measure.restrict_le_self) 1
-  filter_upwards [ae_forall_exists_hasDensityAt hn hu hfin] with x hx i j k hij hik hjk hi hj hk
+  filter_upwards [ae_forall_exists_hasDensityAt hu hfin] with x hx i j k hij hik hjk hi hj hk
   choose d _ hdens hdhalf using hx (reducedBoundary_subset hi)
   have h0 := eq_zero_of_sum_eq_one_of_eq_half (sum_eq_one_of_hasDensityAt hm hd hcov hdens)
     ((hdhalf i).2 hi) ((hdhalf j).2 hj) hij hik.symm hjk.symm
@@ -170,7 +169,7 @@ hypotheses of `TauCeti.ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundar
 the union `⋃_{i ∈ S} s i` also has locally finite perimeter in `Ω`, then up to an `Hⁿ⁻¹`-null set
 its reduced boundary is the union of the interfaces `∂*s i ∩ ∂*s j`, `i ∈ S`, `j ∉ S`. -/
 theorem reducedBoundary_biUnion_ae_eq [Fintype ι] [DecidableEq ι]
-    (hn : 2 ≤ finrank ℝ E) (hm : ∀ i, NullMeasurableSet (s i) μ)
+    (hm : ∀ i, NullMeasurableSet (s i) μ)
     (hd : ∀ i j, i ≠ j → AEDisjoint μ (s i) (s j))
     (hcov : μ (⋃ i, s i)ᶜ = 0)
     (hfin : ∀ i K, IsCompact K → K ⊆ Ω →
@@ -187,12 +186,12 @@ theorem reducedBoundary_biUnion_ae_eq [Fintype ι] [DecidableEq ι]
   have huS : LocallyIntegrableOn ((⋃ i ∈ S, s i).indicator (1 : E → ℝ)) Ω μ :=
     locallyIntegrableOn_indicator_const (hmS.mono Measure.restrict_le_self) 1
   refine EventuallySubset.antisymm (eventuallySubset_iff.2 ?_) (eventuallySubset_iff.2 ?_)
-  · filter_upwards [ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion hn hm hd
+  · filter_upwards [ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion hm hd
       hcov hfin S] with x hx hxS
     obtain ⟨⟨i, j⟩, ⟨hi, hj, hxi, hxj⟩, -⟩ := hx hxS
     exact mem_biUnion (x := (i, j)) (Finset.mem_product.2 ⟨hi, Finset.mem_compl.2 hj⟩) ⟨hxi, hxj⟩
-  · filter_upwards [ae_forall_exists_hasDensityAt hn hu hfin,
-      essentialBoundary_inter_ae_eq_reducedBoundary hn huS hfinS] with x hx hess hxI
+  · filter_upwards [ae_forall_exists_hasDensityAt hu hfin,
+      essentialBoundary_inter_ae_eq_reducedBoundary huS hfinS] with x hx hess hxI
     obtain ⟨⟨i, j⟩, hp, hxi, hxj⟩ := mem_iUnion₂.1 hxI
     obtain ⟨hi, hj⟩ := Finset.mem_product.1 hp
     rw [Finset.mem_compl] at hj

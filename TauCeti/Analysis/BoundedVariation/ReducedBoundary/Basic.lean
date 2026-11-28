@@ -131,6 +131,14 @@ theorem mem_reducedBoundary : x ∈ reducedBoundary μ Ω s ↔ x ∈ Ω ∧ ∃
 /-- The reduced boundary of `s` in `Ω` lies in `Ω`. -/
 theorem reducedBoundary_subset : reducedBoundary μ Ω s ⊆ Ω := fun _ hx => hx.1
 
+/-- In a subsingleton space, every reduced boundary is empty, since there are no unit vectors. -/
+@[simp]
+theorem reducedBoundary_eq_empty_of_subsingleton [Subsingleton E] :
+    reducedBoundary μ Ω s = ∅ := by
+  refine eq_empty_of_forall_notMem fun _ ⟨_, ν, hν, _⟩ => ?_
+  rw [Subsingleton.elim ν 0, norm_zero] at hν
+  exact zero_ne_one hν
+
 /-- At a point of the reduced boundary, the averages of the polar density of `Dχ_s` over shrinking
 closed balls tend to `-ν_s x`. -/
 theorem tendsto_setAverage_polarDensity (hx : x ∈ reducedBoundary μ Ω s) :

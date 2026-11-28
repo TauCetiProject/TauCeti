@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.Real
+public import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
 public import TauCeti.Analysis.BoundedVariation.Slicing.Criterion
 public import TauCeti.Geometry.Euclidean.Volume.Measure
 

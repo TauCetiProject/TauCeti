@@ -19,7 +19,8 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Isodiametric
 
 Mathlib's Euclidean Hausdorff measure `μHE[d]` is the raw Hausdorff measure `μH[d]` rescaled by
 the constant that makes it agree with Lebesgue measure on `d`-dimensional Euclidean space. This
-constant is positive and finite, so the two normalizations have the same null sets and the same
+constant is positive and finite, so the two normalizations have the same null sets, the same
+almost-everywhere filter (`MeasureTheory.Measure.ae_euclideanHausdorffMeasure`), and the same
 sets of finite measure, and lower Lebesgue integrals pull out this finite scalar factor
 (`TauCeti.lintegral_euclideanHausdorffMeasure`); statements of either kind may be proved with
 either normalization. Since `μHE[finrank ℝ E]` is Lebesgue volume on a finite-dimensional real
@@ -44,11 +45,15 @@ volume gives one inequality, and the isodiametric inequality the other
 reads `c * μHE[k] A ≤ μ U` whenever `μ (closedBall x r) ≥ c ω_k r ^ k` along arbitrarily small radii
 at every `x ∈ A` (`MeasureTheory.Measure.mul_euclideanHausdorffMeasure_le_measure_of_isOpen`),
 conversely `μ A ≤ 2 ^ k c μHE[k] A` whenever `μ (closedBall x r) ≤ c ω_k r ^ k` for all small radii
-at every `x ∈ A` (`MeasureTheory.Measure.measure_le_mul_euclideanHausdorffMeasure`), and a
-null-measurable set `A` of finite `μHE[k]` measure satisfies
+at every `x ∈ A` (`MeasureTheory.Measure.measure_le_mul_euclideanHausdorffMeasure`), an outer
+regular measure `μ` satisfies `μ (closedBall x r) / (ω_k r ^ k) → 0` for `μHE[k]`-almost every
+`x ∈ A` whenever `μ A = 0`
+(`MeasureTheory.Measure.ae_tendsto_measure_closedBall_div_volume_closedBall_of_measure_eq_zero`),
+and a null-measurable set `A` with outer regular restriction `μHE[k].restrict A` satisfies
 `μHE[k] (A ∩ closedBall x r) / (ω_k r ^ k) → 0` for `μHE[k]`-almost every `x ∉ A`
-(`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`). In a proper metric space,
-local finiteness of the restricted measure suffices for this zero-density assertion
+(`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_outerRegular`), in
+particular when `μHE[k] A < ∞` (`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`)
+or when the space is proper and `μHE[k].restrict A` is locally finite
 (`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure`).
 
 On a nonempty affine subspace `s` of a Euclidean affine space, volume on the direction of `s`,
@@ -115,6 +120,14 @@ theorem euclideanHausdorffMeasure_eq_zero_iff {d : ℕ} {s : Set X} :
   rw [euclideanHausdorffMeasure_def, smul_apply, ENNReal.smul_def, smul_eq_mul, mul_eq_zero,
     ENNReal.coe_eq_zero,
     or_iff_right (addHaarScalarFactor_volume_hausdorffMeasure_ne_zero d)]
+
+/-- The Euclidean Hausdorff measure `μHE[d]` and the raw Hausdorff measure `μH[d]` have the same
+almost-everywhere filter. -/
+@[simp]
+theorem ae_euclideanHausdorffMeasure {d : ℕ} :
+    ae (μHE[d] : Measure X) = ae (μH[(d : ℝ)] : Measure X) := by
+  rw [euclideanHausdorffMeasure_def,
+    ae_smul_measure_eq (addHaarScalarFactor_volume_hausdorffMeasure_ne_zero d)]
 
 /-- A set has finite Euclidean Hausdorff measure `μHE[d]` if and only if it has finite raw
 Hausdorff measure `μH[d]`. -/
@@ -373,11 +386,47 @@ theorem measure_le_mul_euclideanHausdorffMeasure (μ : Measure X) (k : ℕ) {c :
     exact key.trans_eq (by ring)
   · rwa [EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le, ← mul_assoc] at hle
 
+/-- **Zero density on a null set**, Euclidean normalization. An outer regular measure `μ` satisfies
+`μ (closedBall x r) / (ω_k r ^ k) → 0` as `r → 0⁺` for `μHE[k]`-almost every `x ∈ A` whenever
+`μ A = 0`, where `ω_k r ^ k` is the volume of a ball of radius `r` in `EuclideanSpace ℝ (Fin k)`.
+No measurability of `A` is needed. -/
+theorem ae_tendsto_measure_closedBall_div_volume_closedBall_of_measure_eq_zero (μ : Measure X)
+    [μ.OuterRegular] (k : ℕ) {A : Set X} (hA : μ A = 0) :
+    ∀ᵐ x ∂μHE[k], x ∈ A → Tendsto (fun r => μ (closedBall x r) /
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+  set ω' := volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) / 2 ^ k with hω'
+  have hω0 : ω' ≠ 0 := EuclideanSpace.volume_ball_div_two_pow_ne_zero k
+  have hωtop : ω' ≠ ∞ := EuclideanSpace.volume_ball_div_two_pow_ne_top k
+  rw [TauCeti.euclideanHausdorffMeasure_eq_smul_hausdorffMeasure]
+  refine ae_smul_measure ?_ _
+  filter_upwards [μ.ae_tendsto_measure_closedBall_div_of_measure_eq_zero hA]
+    with x hx hxA
+  have hmul : Tendsto (fun r => ω'⁻¹ * (μ (closedBall x r) / ENNReal.ofReal (2 * r) ^ (k : ℝ)))
+      (𝓝[>] 0) (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul (hx hxA) (.inr (ENNReal.inv_ne_top.2 hω0))
+  refine hmul.congr' (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) => ?_)
+  dsimp only
+  rw [EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le, ← hω']
+  simp only [div_eq_mul_inv, ENNReal.mul_inv (.inl hω0) (.inl hωtop)]
+  ring
+
 end MeasureTheory.Measure
 
 namespace TauCeti
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
+
+/-- **Zero density outside a set with outer regular restriction**, Euclidean normalization. If
+`A` is null-measurable for `μHE[k]` and `μHE[k].restrict A` is outer regular, then
+`μHE[k] (A ∩ closedBall x r) / (ω_k r ^ k) → 0` as `r → 0⁺` for `μHE[k]`-almost every `x ∉ A`. -/
+theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_outerRegular (k : ℕ)
+    {A : Set X} (hA : NullMeasurableSet A μHE[k]) [(μHE[k].restrict A).OuterRegular] :
+    ∀ᵐ x ∂μHE[k], x ∉ A → Tendsto (fun r ↦ μHE[k] (A ∩ closedBall x r) /
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+  have hnull : (μHE[k].restrict A) Aᶜ = 0 := ae_iff.1 (ae_restrict_mem₀ hA)
+  simpa [Measure.restrict_apply measurableSet_closedBall, inter_comm A] using
+    (μHE[k].restrict A).ae_tendsto_measure_closedBall_div_volume_closedBall_of_measure_eq_zero
+      k hnull
 
 /-- **Zero density outside a set**, Euclidean normalization. A null-measurable set `A` of finite
 `k`-dimensional Euclidean Hausdorff measure satisfies
@@ -386,20 +435,10 @@ where `ω_k r ^ k` is the volume of a ball of radius `r` in `EuclideanSpace ℝ 
 theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div (k : ℕ) {A : Set X}
     (hA : NullMeasurableSet A μHE[k]) (hAfin : μHE[k] A ≠ ∞) :
     ∀ᵐ x ∂μHE[k], x ∉ A → Tendsto (fun r => μHE[k] (A ∩ closedBall x r) /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
-  set ω' := volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1) / 2 ^ k
-  have hω0 : ω' ≠ 0 := EuclideanSpace.volume_ball_div_two_pow_ne_zero k
-  have hωtop : ω' ≠ ∞ := EuclideanSpace.volume_ball_div_two_pow_ne_top k
-  rw [euclideanHausdorffMeasure_eq_smul_hausdorffMeasure] at hA hAfin ⊢
-  replace hAfin : μH[k] A ≠ ∞ := fun h => hAfin (by
-    rw [_root_.smul_apply, smul_eq_mul, h]; exact ENNReal.mul_top hω0)
-  refine ae_smul_measure ?_ _
-  filter_upwards [ae_tendsto_hausdorffMeasure_inter_closedBall_div
-    (hA.mono_ac (absolutelyContinuous_smul hω0)) hAfin] with x hx hxA
-  refine (hx hxA).congr' (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) => ?_)
-  dsimp only
-  rw [_root_.smul_apply, smul_eq_mul, EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le,
-    ENNReal.mul_div_mul_left _ _ hω0 hωtop]
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) :=
+  have : IsFiniteMeasure (μHE[k].restrict A) :=
+    ⟨by rw [Measure.restrict_apply_univ]; exact hAfin.lt_top⟩
+  ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_outerRegular k hA
 
 /-- **Zero density outside a locally finite set**, Euclidean normalization. In a proper
 metric space, local finiteness of the restricted Hausdorff measure suffices; the set may
@@ -408,23 +447,8 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFi
     [ProperSpace X] (k : ℕ) {A : Set X} (hA : NullMeasurableSet A μHE[k])
     [IsLocallyFiniteMeasure (μHE[k].restrict A)] :
     ∀ᵐ x ∂μHE[k], x ∉ A → Tendsto (fun r ↦ μHE[k] (A ∩ closedBall x r) /
-      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
-  classical
-  rcases isEmpty_or_nonempty X with hX | hX
-  · exact Eventually.of_forall fun x ↦ isEmptyElim x
-  let x₀ := Classical.choice hX
-  have hfin (j : ℕ) : μHE[k] (A ∩ ball x₀ j) ≠ ∞ := by
-    rw [inter_comm, ← Measure.restrict_apply measurableSet_ball]
-    exact measure_ball_lt_top.ne
-  have hzero (j : ℕ) := ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div k
-    (hA.inter measurableSet_ball.nullMeasurableSet) (hfin j)
-  filter_upwards [ae_all_iff.mpr hzero] with x hx hxA
-  obtain ⟨j, hj⟩ := exists_nat_gt (dist x x₀)
-  have hxj : x ∈ ball x₀ j := mem_ball.mpr hj
-  refine (hx j (fun h ↦ hxA h.1)).congr' ?_
-  filter_upwards [eventually_nhdsWithin_of_eventually_nhds
-    (eventually_closedBall_subset (isOpen_ball.mem_nhds hxj))] with r hr
-  rw [inter_assoc, inter_eq_right.mpr hr]
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) :=
+  ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_outerRegular k hA
 
 end TauCeti
 

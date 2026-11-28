@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Slicing.Basic
-import TauCeti.Analysis.BoundedVariation.Real
+import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
 
 /-!
 # Perimeter excess from noninterval line sections

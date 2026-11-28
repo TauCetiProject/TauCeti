@@ -12,11 +12,13 @@ import Mathlib.Analysis.Calculus.Monotone
 import TauCeti.Analysis.BoundedVariation.CutByBall.Basic
 import TauCeti.Analysis.BoundedVariation.DensityEstimates
 import TauCeti.Analysis.BoundedVariation.Isometry
-import TauCeti.Analysis.BoundedVariation.Real
+import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
+import TauCeti.Analysis.BoundedVariation.OneDimensional.ReducedBoundary
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Analysis.BoundedVariation.Sobolev.Basic
 import TauCeti.Analysis.Calculus.PowerGrowth
 import TauCeti.Basic.Real.ConjExponents
+import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -43,9 +45,8 @@ The constants depend only on `n`, `μ` and `t`. Together with the upper density 
 `TauCeti.eventually_perimeter_ball_le`, they say that near a point of the reduced boundary both
 `s` and its complement fill a definite proportion of every small ball, and the perimeter measure of
 the ball is comparable to `r ^ (n - 1)`. These are the estimates behind the compactness of the
-blow-ups of `s` at points of `∂*s` in De Giorgi's structure theorem. As a first consequence, the
-reduced boundary lies in the essential boundary
-(`TauCeti.reducedBoundary_subset_essentialBoundary`).
+blow-ups of `s` at points of `∂*s` in De Giorgi's structure theorem and the inclusion of `∂*s`
+in the essential boundary (`TauCeti.reducedBoundary_subset_essentialBoundary`).
 
 In dimension one, writing `μ = c • volume`, the perimeter bound takes the sharp form
 `c ≤ |Dχ_s| (closedBall x r)` for every small `r > 0`
@@ -318,34 +319,32 @@ theorem eventually_addHaarScalarFactor_le_variationMeasure_closedBall_of_finrank
     exact fun h => (measure_inter_ball_pos (s := sᶜ) (by rwa [reducedBoundary_compl]) hrε.1).ne'
       (hμv h)
 
-/-- **The reduced boundary lies in the essential boundary.** Let `E` have dimension `n ≥ 2` and
-let `μ` be an additive Haar measure. At a point of the reduced boundary of `s` in an open set `Ω`,
-`s` has neither density zero nor density one. -/
-theorem reducedBoundary_subset_essentialBoundary (hn : 2 ≤ finrank ℝ E) :
+/-- **The reduced boundary lies in the essential boundary.** Against an additive Haar measure on a
+finite-dimensional real inner product space, at every point of the reduced boundary of `s` in an
+open set `Ω`, `s` has neither density zero nor density one. -/
+theorem reducedBoundary_subset_essentialBoundary :
     reducedBoundary μ Ω s ⊆ essentialBoundary μ s := by
-  intro x hx
-  set q := NNReal.conjExponent (finrank ℝ E)
-  have hp : NNReal.HolderConjugate (finrank ℝ E) q := .conjExponent (by exact_mod_cast hn)
-  have hc : (((1 + 2) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ q : ℝ≥0) : ℝ≥0∞) ^
-      finrank ℝ E ≠ ∞ := ENNReal.pow_ne_top ENNReal.coe_ne_top
-  rw [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
-  refine ⟨fun h1 => ?_,
-    not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc
-      (eventually_ofReal_pow_le_mul_measure_inter_ball hp hx one_lt_two)⟩
-  -- Density one of `s` is density one of the null-measurable `s ∩ Ω`, and hence density zero of
-  -- its complement, which contains `ball x r \ s` for small `r`.
-  have hs := nullMeasurableSet_inter_of_mem_reducedBoundary hx
-  obtain ⟨ε, hε, hεΩ⟩ :=
-    nhds_basis_closedBall.mem_iff.1 (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))
-  have h1' : HasDensityAt μ (s ∩ Ω) x 1 := by
-    refine hasDensityAt_iff.2 ((hasDensityAt_iff.1 h1).congr' ?_)
-    filter_upwards [Ioo_mem_nhdsGT hε] with r hr
-    rw [inter_assoc, inter_eq_right.2 ((closedBall_subset_closedBall hr.2.le).trans hεΩ)]
-  refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc ?_
-    (by simpa using h1'.compl hs (Metric.eventually_measure_closedBall_ne_zero_ne_top μ x))
-  filter_upwards [eventually_ofReal_pow_le_mul_measure_ball_sdiff hp hx one_lt_two] with r hr
-  refine hr.trans ?_
-  gcongr
-  exact fun y hy => ⟨.inl hy.2, hy.1⟩
+  rcases le_or_gt (finrank ℝ E) 1 with hn | hn
+  · exact reducedBoundary_subset_essentialBoundary_of_finrank_le_one hn
+  · intro x hx
+    set q := NNReal.conjExponent (finrank ℝ E)
+    have hp : NNReal.HolderConjugate (finrank ℝ E) q := .conjExponent (by exact_mod_cast hn)
+    have hc : (((1 + 2) * finrank ℝ E * eLpNormLESNormFDerivOneConst μ q : ℝ≥0) : ℝ≥0∞) ^
+        finrank ℝ E ≠ ∞ := ENNReal.pow_ne_top ENNReal.coe_ne_top
+    rw [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
+    refine ⟨fun h1 => ?_,
+      not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc
+        (eventually_ofReal_pow_le_mul_measure_inter_ball hp hx one_lt_two)⟩
+    -- Density one of `s` is density one of the null-measurable `s ∩ Ω`, and hence density zero of
+    -- its complement, which contains `ball x r \ s` for small `r`.
+    have hs := nullMeasurableSet_inter_of_mem_reducedBoundary hx
+    have h1' : HasDensityAt μ (s ∩ Ω) x 1 :=
+      (hasDensityAt_inter_of_mem_nhds (Ω.isOpen.mem_nhds (reducedBoundary_subset hx))).2 h1
+    refine not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball hc ?_
+      (by simpa using h1'.compl hs (Metric.eventually_measure_closedBall_ne_zero_ne_top μ x))
+    filter_upwards [eventually_ofReal_pow_le_mul_measure_ball_sdiff hp hx one_lt_two] with r hr
+    refine hr.trans ?_
+    gcongr
+    exact fun y hy => ⟨.inl hy.2, hy.1⟩
 
 end TauCeti

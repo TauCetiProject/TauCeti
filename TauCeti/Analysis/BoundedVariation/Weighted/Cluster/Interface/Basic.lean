@@ -130,25 +130,25 @@ theorem exists_totalVariationOn_indicator_cell_ne_top (hW : ContDiff ℝ 1 W)
   exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top hW
     ((Ω.nullMeasurableSet_cell i).mono Measure.restrict_le_self) (Ω.weightedPerimeter_lt_top i).ne
 
-/-- **No triple points.** For a `C¹` weight, in dimension `n ≥ 2`, `Hⁿ⁻¹`-almost no point lies
-on the reduced boundaries of three distinct cells. -/
+/-- **No triple points.** For a `C¹` weight, `Hⁿ⁻¹`-almost no point lies on the reduced
+boundaries of three distinct cells. -/
 theorem ae_notMem_reducedBoundary_cell_of_mem_interface (hW : ContDiff ℝ 1 W)
-    (hn : 2 ≤ finrank ℝ E) (Ω : Cluster W q) :
+    (Ω : Cluster W q) :
     ∀ᵐ x ∂μHE[finrank ℝ E - 1], ∀ i j k, i ≠ j → i ≠ k → j ≠ k → x ∈ Ω.interface i j →
       x ∉ reducedBoundary volume ⊤ (Ω.cell k) := by
-  filter_upwards [ae_notMem_reducedBoundary_of_mem_reducedBoundary_of_mem_reducedBoundary hn
+  filter_upwards [ae_notMem_reducedBoundary_of_mem_reducedBoundary_of_mem_reducedBoundary
     Ω.nullMeasurableSet_cell (fun i j hij => (Ω.pairwise_disjoint hij).aedisjoint)
     Ω.volume_compl_iUnion (Ω.exists_totalVariationOn_indicator_cell_ne_top hW)]
     with x hx i j k hij hik hjk hxij
   exact hx i j k hij hik hjk (mem_interface.1 hxij).1 (mem_interface.1 hxij).2
 
-/-- For a `C¹` weight, in dimension `n ≥ 2`, the interfaces `Σ_ij` and `Σ_i'j'` of two distinct
-pairs of distinct cells meet in an `Hⁿ⁻¹`-null set. -/
-theorem aedisjoint_interface (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E) (Ω : Cluster W q)
+/-- For a `C¹` weight, the interfaces `Σ_ij` and `Σ_i'j'` of two distinct pairs of distinct cells
+meet in an `Hⁿ⁻¹`-null set. -/
+theorem aedisjoint_interface (hW : ContDiff ℝ 1 W) (Ω : Cluster W q)
     {i j i' j' : Fin q} (hij : i ≠ j) (hi'j' : i' ≠ j') (hne : s(i, j) ≠ s(i', j')) :
     AEDisjoint μHE[finrank ℝ E - 1] (Ω.interface i j) (Ω.interface i' j') := by
   refine measure_mono_null (fun x hx => ?_)
-    (ae_iff.1 (Ω.ae_notMem_reducedBoundary_cell_of_mem_interface hW hn))
+    (ae_iff.1 (Ω.ae_notMem_reducedBoundary_cell_of_mem_interface hW))
   obtain ⟨hx, hi', hj'⟩ := hx
   simp only [mem_ofPred_eq, not_forall, not_not]
   rw [Ne, Sym2.eq_iff, not_or, not_and, not_and] at hne
@@ -163,28 +163,27 @@ theorem aedisjoint_interface (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E) 
   · exact ⟨i, i', j, hii, hij, fun h => hji h.symm, mem_interface.2 ⟨(mem_interface.1 hx).1, hi'⟩,
       (mem_interface.1 hx).2⟩
 
-/-- For a `C¹` weight, in dimension `n ≥ 2`, the reduced boundary of a union of cells
-`⋃_{i ∈ S} Ω_i` is `Hⁿ⁻¹`-almost everywhere the union of the interfaces `Σ_ij` with `i ∈ S` and
-`j ∉ S`. -/
-theorem reducedBoundary_biUnion_cell_ae_eq (hW : ContDiff ℝ 1 W) (hn : 2 ≤ finrank ℝ E)
+/-- For a `C¹` weight, the reduced boundary of a union of cells `⋃_{i ∈ S} Ω_i` is
+`Hⁿ⁻¹`-almost everywhere the union of the interfaces `Σ_ij` with `i ∈ S` and `j ∉ S`. -/
+theorem reducedBoundary_biUnion_cell_ae_eq (hW : ContDiff ℝ 1 W)
     (Ω : Cluster W q) (S : Finset (Fin q)) :
     reducedBoundary volume ⊤ (⋃ i ∈ S, Ω.cell i) =ᵐ[μHE[finrank ℝ E - 1]]
       ⋃ p ∈ S ×ˢ Sᶜ, Ω.interface p.1 p.2 := by
   simp only [interface_def]
-  exact reducedBoundary_biUnion_ae_eq hn Ω.nullMeasurableSet_cell
+  exact reducedBoundary_biUnion_ae_eq Ω.nullMeasurableSet_cell
     (fun i j hij => (Ω.pairwise_disjoint hij).aedisjoint) Ω.volume_compl_iUnion
     (Ω.exists_totalVariationOn_indicator_cell_ne_top hW) S
     (exists_totalVariationOn_indicator_ne_top_of_weightedPerimeter_ne_top hW
       ((Ω.nullMeasurableSet_biUnion_cell S).mono Measure.restrict_le_self)
       (Ω.weightedPerimeter_biUnion_cell_lt_top hW S).ne)
 
-/-- For a `C¹` weight, in dimension `n ≥ 2`, `Hⁿ⁻¹`-almost every point of the reduced boundary
-`∂*Ω_i` of a cell lies on exactly one interface `Σ_ij` with `j ≠ i`. -/
+/-- For a `C¹` weight, `Hⁿ⁻¹`-almost every point of the reduced boundary `∂*Ω_i` of a cell lies
+on exactly one interface `Σ_ij` with `j ≠ i`. -/
 theorem ae_existsUnique_mem_interface_of_mem_reducedBoundary_cell (hW : ContDiff ℝ 1 W)
-    (hn : 2 ≤ finrank ℝ E) (Ω : Cluster W q) (i : Fin q) :
+    (Ω : Cluster W q) (i : Fin q) :
     ∀ᵐ x ∂μHE[finrank ℝ E - 1], x ∈ reducedBoundary volume ⊤ (Ω.cell i) →
       ∃! j, j ≠ i ∧ x ∈ Ω.interface i j := by
-  filter_upwards [ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion hn
+  filter_upwards [ae_existsUnique_mem_reducedBoundary_of_mem_reducedBoundary_biUnion
     Ω.nullMeasurableSet_cell (fun i j hij => (Ω.pairwise_disjoint hij).aedisjoint)
     Ω.volume_compl_iUnion (Ω.exists_totalVariationOn_indicator_cell_ne_top hW) {i}] with x hx hxi
   rw [Finset.set_biUnion_singleton] at hx
@@ -222,13 +221,13 @@ theorem weightedPerimeter_biUnion_cell_eq_sum_interfaceArea (hW : ContDiff ℝ 1
   rw [weightedPerimeter_eq_lintegral_reducedBoundary_of_ne_top hW hn
       ((Ω.nullMeasurableSet_biUnion_cell S).mono Measure.restrict_le_self)
       (Ω.weightedPerimeter_biUnion_cell_lt_top hW S).ne,
-    setLIntegral_congr (Ω.reducedBoundary_biUnion_cell_ae_eq hW hn S),
+    setLIntegral_congr (Ω.reducedBoundary_biUnion_cell_ae_eq hW S),
     lintegral_biUnion_finset₀ ?_ fun p _ => (Ω.measurableSet_interface p.1 p.2).nullMeasurableSet,
     Finset.sum_product]
   · simp only [interfaceArea_def]
   · rintro ⟨i, j⟩ hp ⟨i', j'⟩ hp' hne
     simp only [Finset.coe_product, mem_prod, Finset.mem_coe, Finset.mem_compl] at hp hp'
-    refine Ω.aedisjoint_interface hW hn (fun h : i = j => hp.2 (h ▸ hp.1))
+    refine Ω.aedisjoint_interface hW (fun h : i = j => hp.2 (h ▸ hp.1))
       (fun h : i' = j' => hp'.2 (h ▸ hp'.1)) ?_
     rw [Ne, Sym2.eq_iff]
     rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)

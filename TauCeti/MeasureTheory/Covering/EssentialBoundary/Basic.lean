@@ -25,14 +25,16 @@ of `s` in closed balls around `x` tends to `d` as `r → 0⁺`. The points of de
 **essential boundary** `TauCeti.essentialBoundary μ s`. For Lebesgue measure these are the sets
 `E⁽¹⁾`, `E⁽⁰⁾` and `∂ᵉE` of the theory of sets of finite perimeter.
 
-All three sets depend only on the `μ`-a.e. class of `s`, unlike the topological interior and
-frontier. They are nevertheless comparable to them: for a locally finite measure that charges
-every open set, `interior s ⊆ essentialInterior μ s ⊆ closure s`, while
-`essentialBoundary μ s ⊆ frontier s` holds for any measure. For a locally finite measure that
-charges every open set and a null-measurable set `s`, complements exchange the essential interior
-and exterior; for any measure, a null-measurable set and its complement have the same essential
-boundary. The essential boundary of a union of any two sets lies in the union of their
-essential boundaries; the same holds for an intersection of two sets one of which is
+Unlike the topological interior and frontier, all three sets depend only on the `μ`-a.e. class of
+`s`; moreover, locally on an open set `U` they depend only on `s ∩ U`. They are nevertheless
+comparable to them: for a locally finite measure that charges every open set,
+`interior s ⊆ essentialInterior μ s ⊆ closure s`, while `essentialBoundary μ s ⊆ frontier s`
+holds for any measure. For a locally finite measure that charges every open set and a
+null-measurable set `s`, complements exchange the essential interior and exterior, and `univ` has
+essential interior `univ` and empty essential exterior; for any measure, a null-measurable set and
+its complement have the same essential boundary, so `∅`, `univ` and subsets of subsingleton spaces
+have empty essential boundary. The essential boundary of a union of any two sets lies in the union
+of their essential boundaries; the same holds for an intersection of two sets one of which is
 null-measurable, for any measure.
 
 For a locally finite measure on a second-countable metric space with its Borel σ-algebra and the
@@ -40,6 +42,12 @@ Besicovitch covering property, such as a finite-dimensional real normed space, L
 theorem shows that the essential interior of a null-measurable set `s` agrees with `s` almost
 everywhere and the essential boundary is null. The essential interior is
 thus a canonical representative of the a.e. class of `s`.
+
+Whenever `μ` has measurable closed balls and positive, finite, continuous closed-ball mass on some
+interval `(0, ε)` around `x`, if the smaller of `μ (s ∩ closedBall x r)` and
+`μ (closedBall x r \ s)` has proportion tending to zero as `r → 0⁺`, continuity of the closed-ball
+proportion on `(0, ε)` forces `s` to have density zero or density one at `x`, so `x` lies outside
+the essential boundary without any measurability assumption on `s`.
 
 For an additive Haar measure on a finite-dimensional real normed space of dimension `n`, a set
 filling a proportion `r ^ n ≤ c μ(s ∩ ball x r)` of every small ball around `x` does not have
@@ -60,19 +68,26 @@ interior.
 
 * `TauCeti.HasDensityAt μ s x d`: the set `s` has density `d` at `x` with respect to `μ`.
 * `TauCeti.essentialInterior`, `TauCeti.essentialExterior`, `TauCeti.essentialBoundary`.
-* `TauCeti.essentialInterior_congr_ae` and its companions: invariance under null modification.
+* `TauCeti.essentialInterior_congr_ae`, `TauCeti.inter_essentialBoundary_inter_of_isOpen`,
+  `TauCeti.notMem_essentialBoundary_of_ae_eq_empty_or_univ` and companions: invariance under null
+  modification and open localization.
 * `TauCeti.essentialInterior_compl` and `TauCeti.essentialBoundary_compl`: complements.
 * `TauCeti.essentialBoundary_union_subset` and `TauCeti.essentialBoundary_inter_subset`.
 * `TauCeti.essentialInterior_preimage_add_right` and its companions: for a translation-invariant
   measure, the three sets commute with translations.
 * `TauCeti.interior_subset_essentialInterior`, `TauCeti.essentialInterior_subset_closure` and
   `TauCeti.essentialBoundary_subset_frontier`: comparison with the topological notions.
+* `TauCeti.hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn`: vanishing of the smaller
+  closed-ball proportion forces density zero or one when closed-ball mass is positive, finite, and
+  continuous on `(0, ε)`.
 * `TauCeti.sum_eq_one_of_hasDensityAt`: for a locally finite measure that charges every open set,
   the densities at a point of the cells of a finite almost disjoint partition add up to `1`.
 * `TauCeti.essentialInterior_ae_eq` and `TauCeti.measure_essentialBoundary`: Lebesgue's density
   theorem.
 * `TauCeti.not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball`: a lower
   volume density bound against a Haar measure rules out density zero.
+* `TauCeti.hasDensityAt_zero_or_one_of_tendsto_min_div`: Haar-measure specialization of the
+  zero-one density dichotomy.
 * `TauCeti.not_hasDensityAt_zero_of_eventually_exists_ball_subset`: so does containing a ball of
   half the radius inside every small ball around `x`.
 * `TauCeti.exists_pos_frequently_ofReal_mul_measure_closedBall_le`: at a point of the essential
@@ -128,6 +143,14 @@ theorem congr_ae (h : HasDensityAt μ s x d) (hst : s =ᵐ[μ] t) : HasDensityAt
     measure_congr (hst.inter Filter.EventuallyEqSet.rfl)
   simpa only [HasDensityAt, hm] using h
 
+/-- Densities only depend on the set in a neighborhood of the point. -/
+theorem congr_nhds (h : HasDensityAt μ s x d) (hst : s =ᶠ[𝓝 x] t) : HasDensityAt μ t x d := by
+  obtain ⟨ε, hε, hεst⟩ := Metric.mem_nhds_iff.1 (eventuallyEqSet_iff.1 hst)
+  refine hasDensityAt_iff.2 ((hasDensityAt_iff.1 h).congr' ?_)
+  filter_upwards [Ioo_mem_nhdsGT hε] with r hr
+  congr 2
+  exact ext fun y => and_congr_left fun hy => hεst (closedBall_subset_ball hr.2 hy)
+
 /-- A positive density forces closed balls of small positive radius around the point to have
 positive finite measure: otherwise the proportions vanish. -/
 theorem eventually_measure_closedBall_ne_zero_ne_top (h : HasDensityAt μ s x d) (hd : d ≠ 0) :
@@ -181,6 +204,31 @@ theorem biUnion_finset [OpensMeasurableSpace α] {ι : Type*} {s : ι → Set α
 
 end HasDensityAt
 
+/-- The empty set has density zero everywhere. -/
+theorem hasDensityAt_empty : HasDensityAt μ ∅ x 0 := by
+  simp [HasDensityAt]
+
+/-- The empty set has density `d` at `x` if and only if `d = 0`. -/
+@[simp]
+theorem hasDensityAt_empty_iff : HasDensityAt μ ∅ x d ↔ d = 0 :=
+  ⟨fun h => h.unique hasDensityAt_empty, fun h => h ▸ hasDensityAt_empty⟩
+
+/-- The whole space has density one at `x`, provided closed balls of small positive radius around
+`x` have positive finite measure. -/
+theorem hasDensityAt_univ
+    (hx : ∀ᶠ r in 𝓝[>] 0, μ (closedBall x r) ≠ 0 ∧ μ (closedBall x r) ≠ ∞) :
+    HasDensityAt μ univ x 1 := by
+  refine hasDensityAt_iff.2 (tendsto_const_nhds.congr' (hx.mono fun r hr => ?_))
+  simp only [univ_inter, ENNReal.div_self hr.1 hr.2]
+
+/-- For a locally finite measure that charges every open set, the whole space has density `d` at
+`x` if and only if `d = 1`. -/
+@[simp]
+theorem hasDensityAt_univ_iff [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] :
+    HasDensityAt μ univ x d ↔ d = 1 :=
+  ⟨fun h => h.unique (hasDensityAt_univ (eventually_measure_closedBall_ne_zero_ne_top μ x)),
+    fun h => h ▸ hasDensityAt_univ (eventually_measure_closedBall_ne_zero_ne_top μ x)⟩
+
 /-- For a null-measurable set `s`, if closed balls of small positive radius around `x` have
 positive finite measure, then `sᶜ` has density zero at `x` exactly when `s` has density one. -/
 theorem hasDensityAt_compl_zero_iff (hs : NullMeasurableSet s μ)
@@ -198,6 +246,27 @@ theorem hasDensityAt_compl_one_iff (hs : NullMeasurableSet s μ)
 /-- Densities only depend on the set up to `μ`-null sets. -/
 theorem hasDensityAt_congr_ae (hst : s =ᵐ[μ] t) : HasDensityAt μ s x d ↔ HasDensityAt μ t x d :=
   ⟨fun h => h.congr_ae hst, fun h => h.congr_ae hst.symm⟩
+
+/-- Densities only depend on the set in a neighborhood of the point. -/
+theorem hasDensityAt_congr_nhds (hst : s =ᶠ[𝓝 x] t) :
+    HasDensityAt μ s x d ↔ HasDensityAt μ t x d :=
+  ⟨fun h => h.congr_nhds hst, fun h => h.congr_nhds hst.symm⟩
+
+/-- Intersecting a set with a neighborhood of `x` does not change its density at `x`. -/
+theorem hasDensityAt_inter_of_mem_nhds {U : Set α} (hU : U ∈ 𝓝 x) :
+    HasDensityAt μ (s ∩ U) x d ↔ HasDensityAt μ s x d :=
+  hasDensityAt_congr_nhds
+    (eventuallyEqSet_iff.2 (eventually_of_mem hU fun _ hy => and_iff_left hy))
+
+/-- Densities at `x` only depend on the set up to a `μ.restrict U`-null subset of a neighborhood
+`U` of `x`. -/
+theorem hasDensityAt_congr_ae_of_mem_nhds {U : Set α} (hU : U ∈ 𝓝 x) (h : s =ᵐ[μ.restrict U] t) :
+    HasDensityAt μ s x d ↔ HasDensityAt μ t x d := by
+  have hUae : (s ∩ U : Set α) =ᵐ[μ] (t ∩ U) :=
+    eventuallyEqSet_iff.2 ((ae_imp_of_ae_restrict (eventuallyEqSet_iff.1 h)).mono
+      fun _ hy => and_congr_left hy)
+  rw [← hasDensityAt_inter_of_mem_nhds hU, hasDensityAt_congr_ae hUae,
+    hasDensityAt_inter_of_mem_nhds hU]
 
 /-- Small closed balls around a point either all have positive finite measure, or every set has
 density zero at the point: the measures of the closed balls increase with the radius, so either
@@ -260,6 +329,12 @@ theorem essentialBoundary_def :
     essentialBoundary μ s = (essentialInterior μ s ∪ essentialExterior μ s)ᶜ :=
   (rfl)
 
+/-- A point at which `s` has density distinct from `0` and `1` lies in the essential boundary. -/
+theorem HasDensityAt.mem_essentialBoundary (h : HasDensityAt μ s x d) (hd0 : d ≠ 0) (hd1 : d ≠ 1) :
+    x ∈ essentialBoundary μ s :=
+  TauCeti.mem_essentialBoundary.2 ⟨fun h1 => hd1 (h.unique (mem_essentialInterior.1 h1)),
+    fun h0 => hd0 (h.unique (mem_essentialExterior.1 h0))⟩
+
 /-- The essential interior and the essential exterior are disjoint. -/
 theorem disjoint_essentialInterior_essentialExterior :
     Disjoint (essentialInterior μ s) (essentialExterior μ s) :=
@@ -281,6 +356,63 @@ theorem essentialBoundary_congr_ae (h : s =ᵐ[μ] t) :
     essentialBoundary μ s = essentialBoundary μ t := by
   rw [essentialBoundary_def, essentialBoundary_def, essentialInterior_congr_ae h,
     essentialExterior_congr_ae h]
+
+/-- The essential exterior of the empty set is the whole space. -/
+@[simp]
+theorem essentialExterior_empty : essentialExterior μ ∅ = univ :=
+  eq_univ_of_forall fun _ => hasDensityAt_empty
+
+/-- The essential interior of the empty set is empty. -/
+@[simp]
+theorem essentialInterior_empty : essentialInterior μ ∅ = ∅ :=
+  eq_empty_of_forall_notMem fun _ hx =>
+    one_ne_zero ((mem_essentialInterior.1 hx).unique hasDensityAt_empty)
+
+/-- The essential boundary of the empty set is empty. -/
+@[simp]
+theorem essentialBoundary_empty : essentialBoundary μ ∅ = ∅ := by
+  simp [essentialBoundary_def]
+
+/-- Inside an open set `U`, the essential interior of `s ∩ U` agrees with that of `s`. -/
+theorem inter_essentialInterior_inter_of_isOpen {U : Set α} (hU : IsOpen U) :
+    U ∩ essentialInterior μ (s ∩ U) = U ∩ essentialInterior μ s :=
+  ext fun _ => and_congr_right fun hx => hasDensityAt_inter_of_mem_nhds (hU.mem_nhds hx)
+
+/-- Inside an open set `U`, the essential exterior of `s ∩ U` agrees with that of `s`. -/
+theorem inter_essentialExterior_inter_of_isOpen {U : Set α} (hU : IsOpen U) :
+    U ∩ essentialExterior μ (s ∩ U) = U ∩ essentialExterior μ s :=
+  ext fun _ => and_congr_right fun hx => hasDensityAt_inter_of_mem_nhds (hU.mem_nhds hx)
+
+/-- Inside an open set `U`, the essential boundary of `s ∩ U` agrees with that of `s`. -/
+theorem inter_essentialBoundary_inter_of_isOpen {U : Set α} (hU : IsOpen U) :
+    U ∩ essentialBoundary μ (s ∩ U) = U ∩ essentialBoundary μ s := by
+  ext x
+  simp only [mem_inter_iff, mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
+  exact and_congr_right fun hx => by
+    rw [hasDensityAt_inter_of_mem_nhds (hU.mem_nhds hx),
+      hasDensityAt_inter_of_mem_nhds (hU.mem_nhds hx)]
+
+/-- Modifying a set on a `μ.restrict U`-null subset of an open set `U` does not change its
+essential interior inside `U`. -/
+theorem inter_essentialInterior_congr_ae {U : Set α} (hU : IsOpen U) (h : s =ᵐ[μ.restrict U] t) :
+    U ∩ essentialInterior μ s = U ∩ essentialInterior μ t :=
+  ext fun _ => and_congr_right fun hx => hasDensityAt_congr_ae_of_mem_nhds (hU.mem_nhds hx) h
+
+/-- Modifying a set on a `μ.restrict U`-null subset of an open set `U` does not change its
+essential exterior inside `U`. -/
+theorem inter_essentialExterior_congr_ae {U : Set α} (hU : IsOpen U) (h : s =ᵐ[μ.restrict U] t) :
+    U ∩ essentialExterior μ s = U ∩ essentialExterior μ t :=
+  ext fun _ => and_congr_right fun hx => hasDensityAt_congr_ae_of_mem_nhds (hU.mem_nhds hx) h
+
+/-- Modifying a set on a `μ.restrict U`-null subset of an open set `U` does not change its
+essential boundary inside `U`. -/
+theorem inter_essentialBoundary_congr_ae {U : Set α} (hU : IsOpen U) (h : s =ᵐ[μ.restrict U] t) :
+    U ∩ essentialBoundary μ s = U ∩ essentialBoundary μ t := by
+  ext x
+  simp only [mem_inter_iff, mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior]
+  exact and_congr_right fun hx => by
+    rw [hasDensityAt_congr_ae_of_mem_nhds (hU.mem_nhds hx) h,
+      hasDensityAt_congr_ae_of_mem_nhds (hU.mem_nhds hx) h]
 
 /-! ### Monotonicity, unions and intersections -/
 
@@ -390,6 +522,18 @@ theorem essentialExterior_compl (hs : NullMeasurableSet s μ) :
     essentialExterior μ sᶜ = essentialInterior μ s := by
   rw [← essentialInterior_compl hs.compl, compl_compl]
 
+/-- The essential interior of the whole space is the whole space. -/
+@[simp]
+theorem essentialInterior_univ : essentialInterior μ univ = univ :=
+  eq_univ_of_forall fun x => hasDensityAt_univ (eventually_measure_closedBall_ne_zero_ne_top μ x)
+
+/-- The essential exterior of the whole space is empty. -/
+@[simp]
+theorem essentialExterior_univ : essentialExterior μ univ = ∅ :=
+  eq_empty_of_forall_notMem fun x hx =>
+    one_ne_zero ((hasDensityAt_univ (eventually_measure_closedBall_ne_zero_ne_top μ x)).unique
+      (mem_essentialExterior.1 hx))
+
 omit [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
 /-- A null-measurable set and its complement have the same essential boundary. -/
 @[simp]
@@ -401,6 +545,34 @@ theorem essentialBoundary_compl (hs : NullMeasurableSet s μ) :
   · rw [hasDensityAt_compl_one_iff hs hx, hasDensityAt_compl_zero_iff hs hx]
     tauto
   · simp [hx s, hx sᶜ]
+
+omit [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- The essential boundary of the whole space is empty. -/
+@[simp]
+theorem essentialBoundary_univ : essentialBoundary μ univ = ∅ := by
+  rw [← compl_empty, essentialBoundary_compl MeasurableSet.empty.nullMeasurableSet,
+    essentialBoundary_empty]
+
+omit [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- In a subsingleton space, every essential boundary is empty. -/
+@[simp]
+theorem essentialBoundary_eq_empty_of_subsingleton [Subsingleton α] :
+    essentialBoundary μ s = ∅ := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨y, hy⟩
+  · exact essentialBoundary_empty
+  · have hs : s = univ := eq_univ_of_forall fun z => Subsingleton.elim y z ▸ hy
+    rw [hs, essentialBoundary_univ]
+
+omit [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure] in
+/-- If a set agrees `μ`-almost everywhere with `∅` or `univ` on an open neighborhood `U` of `x`,
+then `x` does not lie in its essential boundary. -/
+theorem notMem_essentialBoundary_of_ae_eq_empty_or_univ {U : Set α} (hU : IsOpen U) (hxU : x ∈ U)
+    (h : s =ᵐ[μ.restrict U] (∅ : Set α) ∨ s =ᵐ[μ.restrict U] univ) :
+    x ∉ essentialBoundary μ s := by
+  intro hx
+  rcases h with h | h <;>
+    simpa only [essentialBoundary_empty, essentialBoundary_univ, inter_empty, mem_empty_iff_false]
+      using (inter_essentialBoundary_congr_ae hU h).subset ⟨hxU, hx⟩
 
 end Compl
 
@@ -478,6 +650,92 @@ theorem essentialBoundary_subset_frontier : essentialBoundary μ s ⊆ frontier 
   rcases eventually_measure_closedBall_ne_zero_ne_top_or_forall_hasDensityAt_zero μ x with hμ | hμ
   · exact hx.1 (mem_essentialInterior_of_mem_interior hμ hint)
   · exact hx.2 (hμ s)
+
+section ContinuousClosedBall
+
+variable [OpensMeasurableSpace α]
+
+/-- Real-function dichotomy: if `f` is continuous on `(0, ε)`, eventually `0 ≤ f ≤ 1 ≤ f + g`
+as `r → 0⁺`, and `min (f r) (g r) → 0`, then `f → 0` or `f → 1`. -/
+private theorem tendsto_zero_or_one_of_continuousOn_Ioo {ε : ℝ} (hε : 0 < ε)
+    {f g : ℝ → ℝ} (hf : ContinuousOn f (Set.Ioo 0 ε))
+    (hbounds : ∀ᶠ r in 𝓝[>] 0, 0 ≤ f r ∧ f r ≤ 1 ∧ 1 ≤ f r + g r)
+    (hmin : Tendsto (fun r => min (f r) (g r)) (𝓝[>] 0) (𝓝 0)) :
+    Tendsto f (𝓝[>] 0) (𝓝 0) ∨ Tendsto f (𝓝[>] 0) (𝓝 1) := by
+  by_contra! hnot
+  -- Clamp `r ↦ min r (ε / 2)` so `f'` is continuous on `Ioi 0` and agrees with `f` near `0⁺`.
+  set f' : ℝ → ℝ := fun r => f (min r (ε / 2))
+  have hf'_cont : ContinuousOn f' (Ioi 0) :=
+    hf.comp (continuous_id.min continuous_const).continuousOn
+      fun r hr => ⟨lt_min hr (half_pos hε), (min_le_right _ _).trans_lt (half_lt_self hε)⟩
+  have hf'_eq : f' =ᶠ[𝓝[>] 0] f :=
+    eventually_of_mem (Ioo_mem_nhdsGT (half_pos hε)) fun r hr => congrArg f (min_eq_left hr.2.le)
+  have hf'_Icc : ∀ᶠ r in 𝓝[>] 0, f' r ∈ Icc 0 1 := by
+    filter_upwards [hbounds, hf'_eq] with r hr heq
+    exact heq.symm ▸ ⟨hr.1, hr.2.1⟩
+  -- Since `f'` tends to neither `0` nor `1`, it visits an interior interval `[c, d] ⊆ (0, 1)`
+  -- arbitrarily close to `0⁺`, bounding `min f g` away from `0`.
+  obtain ⟨c, d, hc, hd, hfreq⟩ := hf'_cont.exists_frequently_mem_Icc_of_not_tendsto hf'_Icc
+    (fun h0 => hnot.1 (h0.congr' hf'_eq)) (fun h1 => hnot.2 (h1.congr' hf'_eq))
+  have hfreq_min : ∃ᶠ r in 𝓝[>] 0, min c (1 - d) ≤ min (f r) (g r) := by
+    refine (hfreq.and_eventually (hf'_eq.and hbounds)).mono fun r ⟨hrf, heq, hr⟩ => ?_
+    rw [heq] at hrf
+    exact le_min ((min_le_left _ _).trans hrf.1)
+      ((min_le_right _ _).trans (by linarith [hrf.2, hr.2.2]))
+  exact (lt_min hc (sub_pos.2 hd)).not_ge (ge_of_tendsto_of_frequently hmin hfreq_min)
+
+/-- **Zero-one density dichotomy.** On a metric space with measurable closed balls, if `μ` has
+positive, finite, continuous closed-ball mass `r ↦ μ (closedBall x r)` on `(0, ε)` (`ε > 0`), and
+`min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) → 0` as `r → 0⁺`, then
+`s` has either density zero or density one at `x`. No measurability of `s` is needed. -/
+theorem hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn {ε : ℝ} (hε : 0 < ε)
+    (hpos : ∀ r ∈ Set.Ioo 0 ε, μ (closedBall x r) ≠ 0)
+    (hfin : ∀ r ∈ Set.Ioo 0 ε, μ (closedBall x r) ≠ ∞)
+    (hcont : ContinuousOn (fun r => μ (closedBall x r)) (Set.Ioo 0 ε))
+    (h : Tendsto (fun r =>
+      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0)) :
+    HasDensityAt μ s x 0 ∨ HasDensityAt μ s x 1 := by
+  set b : ℝ → ℝ := fun r => μ.real (closedBall x r)
+  set f : ℝ → ℝ := fun r => μ.real (s ∩ closedBall x r) / b r
+  set g : ℝ → ℝ := fun r => μ.real (closedBall x r \ s) / b r
+  have hb_pos {r : ℝ} (hr : r ∈ Set.Ioo 0 ε) : 0 < b r :=
+    ENNReal.toReal_pos (hpos r hr) (hfin r hr)
+  have hb_cont : ContinuousOn b (Set.Ioo 0 ε) :=
+    ENNReal.continuousOn_toReal.comp hcont fun r hr => hfin r hr
+  have hf_cont : ContinuousOn f (Set.Ioo 0 ε) :=
+    (μ.continuousOn_real_inter_closedBall x s hfin hb_cont).div hb_cont
+      fun r hr => (hb_pos hr).ne'
+  have hbounds : ∀ᶠ r in 𝓝[>] 0, 0 ≤ f r ∧ f r ≤ 1 ∧ 1 ≤ f r + g r := by
+    refine eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_
+    have hle : b r ≤ μ.real (s ∩ closedBall x r) + μ.real (closedBall x r \ s) := by
+      simpa only [b, inter_comm s, inter_union_sdiff] using
+        measureReal_union_le (s ∩ closedBall x r) (closedBall x r \ s)
+    exact ⟨div_nonneg measureReal_nonneg measureReal_nonneg,
+      div_le_one_of_le₀ (measureReal_mono inter_subset_right (hfin r hr)) (hb_pos hr).le,
+      by rw [← add_div, one_le_div (hb_pos hr)]; exact hle⟩
+  have hf_toReal (r : ℝ) : (μ (s ∩ closedBall x r) / μ (closedBall x r)).toReal = f r := by
+    rw [ENNReal.toReal_div, ← measureReal_def, ← measureReal_def]
+  have hmin : Tendsto (fun r => min (f r) (g r)) (𝓝[>] 0) (𝓝 0) := by
+    refine ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h).congr'
+      (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_)
+    have hdiv : min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) =
+        min (μ (s ∩ closedBall x r) / μ (closedBall x r))
+          (μ (closedBall x r \ s) / μ (closedBall x r)) :=
+      Monotone.map_min (fun _ _ h => ENNReal.div_le_div_right h _)
+    rw [Function.comp_apply, hdiv, ENNReal.toReal_min
+        (ENNReal.div_ne_top (measure_ne_top_of_subset inter_subset_right (hfin r hr)) (hpos r hr))
+        (ENNReal.div_ne_top (measure_ne_top_of_subset sdiff_subset (hfin r hr)) (hpos r hr)),
+      hf_toReal, ENNReal.toReal_div, ← measureReal_def, ← measureReal_def]
+  have hconv {c : ℝ} (hc : Tendsto f (𝓝[>] 0) (𝓝 c)) :
+      HasDensityAt μ s x (ENNReal.ofReal c) := by
+    refine hasDensityAt_iff.2 ((ENNReal.tendsto_ofReal hc).congr'
+      (eventually_of_mem (Ioo_mem_nhdsGT hε) fun r hr => ?_))
+    rw [← hf_toReal r, ENNReal.ofReal_toReal
+      (ENNReal.div_ne_top (measure_ne_top_of_subset inter_subset_right (hfin r hr)) (hpos r hr))]
+  exact (tendsto_zero_or_one_of_continuousOn_Ioo hε hf_cont hbounds hmin).imp
+    (fun h0 => by simpa using hconv h0) (fun h1 => by simpa using hconv h1)
+
+end ContinuousClosedBall
 
 end PseudoMetricSpace
 
@@ -601,6 +859,22 @@ theorem not_hasDensityAt_zero_of_eventually_ofReal_pow_le_mul_measure_inter_ball
   gcongr
   exact hr.trans (by gcongr; exact ball_subset_closedBall)
 
+/-- **Zero-one density dichotomy.** Against an additive Haar measure on a finite-dimensional real
+normed space, if `min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) → 0`
+as `r → 0⁺`, then `s` has either density zero or density one at `x`. No measurability of `s` is
+needed. -/
+theorem hasDensityAt_zero_or_one_of_tendsto_min_div
+    (h : Tendsto (fun r =>
+      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0)) :
+    HasDensityAt μ s x 0 ∨ HasDensityAt μ s x 1 :=
+  hasDensityAt_zero_or_one_of_tendsto_min_div_of_continuousOn one_pos
+    (fun _ hr => (measure_closedBall_pos μ x hr.1).ne')
+    (fun _ _ => measure_closedBall_lt_top.ne)
+    (((ENNReal.continuous_mul_const (measure_ball_lt_top.ne : μ (ball (0 : E) 1) ≠ ∞)).comp
+      (ENNReal.continuous_ofReal.comp (continuous_pow (Module.finrank ℝ E)))).continuousOn.congr
+      fun _ hr => Measure.addHaar_closedBall μ x hr.1.le)
+    h
+
 /-- A set containing, for every small `ρ > 0`, a ball of radius `ρ / 2` inside `ball x ρ` does not
 have density zero at `x`. -/
 theorem not_hasDensityAt_zero_of_eventually_exists_ball_subset
@@ -631,55 +905,29 @@ theorem exists_pos_frequently_ofReal_mul_measure_closedBall_le (hx : x ∈ essen
     ∃ a > 0, ∃ᶠ r in 𝓝[>] 0,
       ENNReal.ofReal a * μ (closedBall x r) ≤ μ (s ∩ closedBall x r) ∧
         ENNReal.ofReal a * μ (closedBall x r) ≤ μ (closedBall x r \ s) := by
-  set N : ℝ → ℝ := fun r => μ.real (s ∩ closedBall x r)
-  set D : ℝ → ℝ := fun r => μ.real (closedBall x r)
-  have hD0 {r : ℝ} (hr : 0 < r) : 0 < D r :=
-    ENNReal.toReal_pos (measure_closedBall_pos μ x hr).ne' measure_closedBall_lt_top.ne
-  have hNfin (r : ℝ) : μ (s ∩ closedBall x r) ≠ ∞ :=
-    measure_ne_top_of_subset inter_subset_right measure_closedBall_lt_top.ne
-  -- The proportion `ψ r` of `s` in `closedBall x r` depends continuously on `r > 0`, since `D r` is
-  -- a multiple of `r ^ n`.
-  set ψ : ℝ → ℝ := fun r => N r / D r
-  have hDcont {r : ℝ} (hr : 0 < r) : ContinuousAt D r := by
-    refine ((continuous_pow (Module.finrank ℝ E)).mul
-      (continuous_const (y := μ.real (ball (0 : E) 1)))).continuousAt.congr ?_
-    filter_upwards [Ioi_mem_nhds hr] with ρ hρ
-    exact (Measure.addHaar_real_closedBall μ x (le_of_lt hρ)).symm
-  have hcont : ContinuousOn ψ (Ioi 0) := fun r hr =>
-    ((continuousAt_measureReal_inter_closedBall μ s (hDcont hr)).div (hDcont hr)
-      (hD0 hr).ne').continuousWithinAt
-  have hψ : ∀ᶠ r in 𝓝[>] 0, ψ r ∈ Icc 0 1 := Eventually.of_forall fun r =>
-    ⟨div_nonneg measureReal_nonneg measureReal_nonneg, div_le_one_of_le₀
-      (measureReal_mono inter_subset_right measure_closedBall_lt_top.ne) measureReal_nonneg⟩
-  -- The proportion in `ℝ≥0∞` used by `HasDensityAt` is eventually `ENNReal.ofReal ∘ ψ`.
-  have heq : (fun r => ENNReal.ofReal (ψ r)) =ᶠ[𝓝[>] 0]
-      fun r => μ (s ∩ closedBall x r) / μ (closedBall x r) := by
-    filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
-    rw [ENNReal.ofReal_div_of_pos (hD0 hr), ofReal_measureReal (hNfin r),
-      ofReal_measureReal measure_closedBall_lt_top.ne]
-  have hlim {d : ℝ} (h : Tendsto ψ (𝓝[>] 0) (𝓝 d)) : HasDensityAt μ s x (ENNReal.ofReal d) :=
-    (ENNReal.tendsto_ofReal h).congr' heq
-  rw [mem_essentialBoundary, mem_essentialInterior, mem_essentialExterior] at hx
-  obtain ⟨c, d, hc, hd, hfreq⟩ := hcont.exists_frequently_mem_Icc_of_not_tendsto hψ
-    (fun h => hx.2 (by simpa using hlim h)) (fun h => hx.1 (by simpa using hlim h))
-  refine ⟨min c (1 - d), lt_min hc (sub_pos.2 hd),
-    (hfreq.and_eventually self_mem_nhdsWithin).mono fun r ⟨⟨h₁, h₂⟩, hr⟩ => ?_⟩
-  have hr : 0 < r := hr
-  rw [le_div_iff₀ (hD0 hr)] at h₁
-  rw [div_le_iff₀ (hD0 hr)] at h₂
-  have hB : μ (closedBall x r) = ENNReal.ofReal (D r) :=
-    (ofReal_measureReal measure_closedBall_lt_top.ne).symm
-  rw [hB, ← ENNReal.ofReal_mul (le_min hc.le (sub_pos.2 hd).le)]
-  constructor
-  · rw [← ofReal_measureReal (hNfin r)]
-    exact ENNReal.ofReal_le_ofReal
-      ((mul_le_mul_of_nonneg_right (min_le_left _ _) (hD0 hr).le).trans h₁)
-  · rw [← ofReal_measureReal (measure_ne_top_of_subset sdiff_subset measure_closedBall_lt_top.ne),
-      ← sdiff_inter_self_eq_sdiff]
-    refine ENNReal.ofReal_le_ofReal (le_trans ?_ (le_measureReal_sdiff (hNfin r)))
-    have := min_le_right c (1 - d)
-    have := (hD0 hr).le
-    nlinarith
+  have hnot : ¬Tendsto (fun r =>
+      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 0) :=
+    fun h => (hasDensityAt_zero_or_one_of_tendsto_min_div h).elim
+      (fun h0 => (mem_essentialBoundary.1 hx).2 (mem_essentialExterior.2 h0))
+      (fun h1 => (mem_essentialBoundary.1 hx).1 (mem_essentialInterior.2 h1))
+  rw [ENNReal.tendsto_nhds_zero] at hnot
+  push Not at hnot
+  obtain ⟨ε, hεpos, hfreq⟩ := hnot
+  have hle1 (r : ℝ) :
+      min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) ≤ 1 := by
+    refine ENNReal.div_le_of_le_mul ?_
+    rw [one_mul]
+    exact (min_le_left _ _).trans (measure_mono inter_subset_right)
+  have hεlt : ε < 1 := by
+    obtain ⟨r, hr⟩ := hfreq.exists
+    exact hr.trans_le (hle1 r)
+  have hεtop : ε ≠ ∞ := hεlt.trans_le le_top |>.ne
+  refine ⟨ε.toReal, ENNReal.toReal_pos hεpos.ne' hεtop,
+    (hfreq.and_eventually self_mem_nhdsWithin).mono fun r ⟨hrε, (hr0 : 0 < r)⟩ => ?_⟩
+  rw [ENNReal.ofReal_toReal hεtop]
+  have hle := (ENNReal.le_div_iff_mul_le (.inl (measure_closedBall_pos μ x hr0).ne')
+    (.inl measure_closedBall_lt_top.ne)).1 hrε.le
+  exact ⟨hle.trans (min_le_left _ _), hle.trans (min_le_right _ _)⟩
 
 /-! ### Convex sets -/
 

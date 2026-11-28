@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Lebesgue.Indicator
@@ -42,8 +43,8 @@ the semicontinuity half of the direct method for perimeter problems.
 * `TauCeti.perimeter_congr_ae`, `TauCeti.perimeter_congr_of_inter_eq`, `TauCeti.perimeter_mono`
   and `TauCeti.perimeter_iSup`: invariance under null modification inside `Ω` and locality, and
   monotonicity and inner continuity in `Ω`.
-* `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty`, `TauCeti.perimeter_univ` and
-  `TauCeti.perimeter_of_subsingleton`.
+* `TauCeti.perimeter_compl`, `TauCeti.perimeter_empty`, `TauCeti.perimeter_univ`,
+  `TauCeti.perimeter_of_subsingleton` and `TauCeti.perimeter_eq_addHaarScalarFactor_mul`.
 * `TauCeti.perimeter_eq_zero_of_disjoint_frontier` and
   `TauCeti.perimeter_eq_of_frontier_inter_subset`: the perimeter is carried by the frontier.
 * `TauCeti.perimeter_diff_le_of_frontier_inter_subset`: cutting out an open neighborhood `G` of
@@ -80,6 +81,16 @@ def perimeter (μ : Measure E) (Ω : Opens E) (s : Set E) : ℝ≥0∞ :=
 /-- The perimeter is the total variation of the indicator. -/
 theorem perimeter_def : perimeter μ Ω s = totalVariationOn μ Ω (s.indicator 1) :=
   (rfl)
+
+/-- A null-measurable set of finite perimeter in `Ω` has locally integrable indicator on `Ω` and
+finite total variation on an open neighborhood of every compact subset of `Ω`. -/
+theorem locallyIntegrableOn_indicator_and_exists_totalVariationOn_ne_top_of_perimeter_ne_top
+    [IsLocallyFiniteMeasure μ] (hs : NullMeasurableSet s (μ.restrict Ω))
+    (hP : perimeter μ Ω s ≠ ∞) :
+    LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ ∧
+      ∀ K, IsCompact K → K ⊆ Ω →
+        ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞ :=
+  ⟨locallyIntegrableOn_indicator_const hs 1, fun _ _ hKΩ => ⟨Ω, hKΩ, by rwa [← perimeter_def]⟩⟩
 
 /-- **The perimeter by duality.** For a null-measurable set `s`,
 `P(s; Ω) = ⨆ { ∫_s div φ ∂μ | φ ∈ 𝓓(Ω, E), ‖φ‖ ≤ 1 }`. -/
@@ -142,6 +153,12 @@ theorem perimeter_restrict_of_subset {t : Set E} (h : t ⊆ s) :
 section Haar
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
+
+/-- Any two additive Haar measures rescale perimeter by their Haar scalar factor. -/
+theorem perimeter_eq_addHaarScalarFactor_mul (ν : Measure E) [ν.IsAddHaarMeasure] :
+    perimeter μ Ω s = (Measure.addHaarScalarFactor μ ν : ℝ≥0∞) * perimeter ν Ω s := by
+  conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul μ ν]
+  exact totalVariationOn_smul_measure _
 
 /-- **Complements have the same perimeter**, against an additive Haar measure. No measurability
 of `s` is needed: the indicators of `s` and `sᶜ` differ by a constant up to sign. -/

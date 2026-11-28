@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dimension.Finite
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.Ray
 import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.Dimension.Finite
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
@@ -29,7 +29,9 @@ positive scaling and holds for one nonzero vector, then it holds for `x` or `-x`
 multiples of each other (`TauCeti.exists_pos_smul_eq_of_apply_pos_of_finrank_eq_one`).
 
 Conversely, a nontrivial space that is not one-dimensional has rank greater than `1`
-(`TauCeti.one_lt_rank_of_finrank_ne_one`).
+(`TauCeti.one_lt_rank_of_finrank_ne_one`), while a finite-dimensional vector space with
+`finrank ≤ 1` is either a subsingleton or has `finrank = 1`
+(`TauCeti.subsingleton_or_finrank_eq_one_of_le_one`).
 -/
 
 public section
@@ -110,5 +112,12 @@ theorem one_lt_rank_of_finrank_ne_one {K V : Type*} [DivisionRing K] [AddCommGro
   · have := Module.finrank_pos (R := K) (M := V)
     exact Module.one_lt_rank_of_one_lt_finrank (by omega)
   · exact Cardinal.one_lt_aleph0.trans_le (not_lt.1 (mt Module.rank_lt_aleph0_iff.1 hfin))
+
+/-- A finite-dimensional vector space with `finrank ≤ 1` is either a subsingleton or
+one-dimensional. -/
+theorem subsingleton_or_finrank_eq_one_of_le_one {K V : Type*} [DivisionRing K] [AddCommGroup V]
+    [Module K V] [Module.Finite K V] (h : finrank K V ≤ 1) :
+    Subsingleton V ∨ finrank K V = 1 :=
+  (Nat.le_one_iff_eq_zero_or_eq_one.1 h).imp (Module.finrank_zero_iff (R := K)).1 id
 
 end TauCeti

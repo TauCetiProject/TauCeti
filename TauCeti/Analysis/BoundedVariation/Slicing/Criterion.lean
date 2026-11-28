@@ -157,7 +157,7 @@ theorem perimeter_le_euclideanHausdorffMeasure_essentialBoundary_inter (Ω : Ope
         hK hKΩ
   rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn
     (locallyIntegrableOn_indicator_const (hs.mono Measure.restrict_le_self) 1) hfin]
-  exact measure_mono (subset_inter (reducedBoundary_subset_essentialBoundary hn)
+  exact measure_mono (subset_inter reducedBoundary_subset_essentialBoundary
     reducedBoundary_subset)
 
 end TauCeti

@@ -89,7 +89,7 @@ theorem perimeter_eq_euclideanHausdorffMeasure_frontier_inter (hn : 2 ≤ finran
       ∃ U : Opens E, C ⊆ (U : Set E) ∧ totalVariationOn volume U (K.indicator 1) ≠ ∞ :=
     hK.exists_opens_totalVariationOn_indicator_ne_top hC.isBounded
   rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn hu hfin,
-    ← measure_congr (essentialBoundary_inter_ae_eq_reducedBoundary hn hu hfin),
+    ← measure_congr (essentialBoundary_inter_ae_eq_reducedBoundary hu hfin),
     hK.essentialBoundary_eq_frontier hKi]
 
 /-- **The perimeter of a convex set is the Hausdorff measure of its frontier.** In dimension

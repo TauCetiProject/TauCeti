@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-import TauCeti.Analysis.BoundedVariation.Real
+import TauCeti.Analysis.BoundedVariation.OneDimensional.Perimeter
 import TauCeti.MeasureTheory.Covering.EssentialBoundary.Real
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
