@@ -26,8 +26,10 @@ extensionality, factor-generation, induction, and empty-index lemmas for unital 
 * `LinearAlgebra.FreeProduct.lift_ι_apply`, `LinearAlgebra.FreeProduct.lift_comp`, and
   `LinearAlgebra.FreeProduct.lift_ι`: pointwise evaluation and functoriality of
   `LinearAlgebra.FreeProduct.lift`.
-* `LinearAlgebra.FreeProduct.iSup_range_ι` and `LinearAlgebra.FreeProduct.adjoin_iUnion_range_ι`:
-  the images of the canonical factor maps generate `FreeProduct R A` as a unital `R`-subalgebra.
+* `LinearAlgebra.FreeProduct.iSup_range_ι`, `LinearAlgebra.FreeProduct.iSup_range_comp_ι`, and
+  `LinearAlgebra.FreeProduct.adjoin_iUnion_range_ι`: the images of the canonical factor maps
+  generate `FreeProduct R A` (and the range of any homomorphism out of it) as a unital
+  `R`-subalgebra.
 * `LinearAlgebra.FreeProduct.induction_on`: structural induction on `FreeProduct R A` from scalars
   and factor images under addition and multiplication.
 -/
@@ -90,6 +92,19 @@ theorem iSup_range_ι : (⨆ i, (ι R A i).range) = (⊤ : Subalgebra R (FreePro
   intro x _
   have hx : S.val (s x) = x := AlgHom.congr_fun hs x
   exact hx ▸ (s x).property
+
+section
+
+variable {R A} {B : Type*} [Semiring B] [Algebra R B]
+
+/-- For any algebra homomorphism `f` out of `FreeProduct R A`, the images of the factor embeddings
+generate `f.range`. -/
+theorem iSup_range_comp_ι (f : FreeProduct R A →ₐ[R] B) :
+    (⨆ i, (f.comp (ι R A i)).range) = f.range := by
+  simp_rw [AlgHom.range_comp, ← (Subalgebra.gc_map_comap f).l_iSup,
+    iSup_range_ι, Algebra.map_top]
+
+end
 
 /-- The union of the ranges of the factor maps generates `FreeProduct R A` over `R`. -/
 theorem adjoin_iUnion_range_ι :

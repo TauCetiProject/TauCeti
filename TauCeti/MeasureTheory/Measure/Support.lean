@@ -47,6 +47,17 @@ global continuity is unnecessary for this inclusion.
   the original support.
 * `MeasureTheory.Measure.support_map_homeomorph` — the support of a pushforward by a homeomorphism
   is the image of the original support.
+* `MeasureTheory.Measure.isProbabilityMeasure_comap_support` — in a hereditarily Lindelöf space
+  with measurable open sets, pulling a probability measure back to its support gives a probability
+  measure.
+* `MeasureTheory.Measure.isOpenPosMeasure_comap_support` — in a hereditarily Lindelöf space with
+  measurable open sets, pulling a measure back to its support yields a measure positive on nonempty
+  open sets.
+* `MeasureTheory.Measure.IsCompactProbabilityMeasure` — predicate for probability measures with
+  compact topological support.
+* `MeasureTheory.Measure.isCompact_support_map_homeomorph_iff` and
+  `MeasureTheory.Measure.isCompactProbabilityMeasure_map_homeomorph_iff` — pushforward along a
+  homeomorphism preserves compact support and being a compactly supported probability measure.
 -/
 
 public section
@@ -162,6 +173,36 @@ theorem support_comap_of_isOpenEmbedding {X Y : Type*} [TopologicalSpace X]
     rw [← hf'.comap_apply] at this
     exact this.trans_le (measure_mono hVU)
 
+/-- In a hereditarily Lindelöf space with measurable open sets, pulling a probability measure back
+to its topological support yields a probability measure. -/
+instance isProbabilityMeasure_comap_support {X : Type*} [TopologicalSpace X]
+    [HereditarilyLindelofSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    (μ : Measure X) [IsProbabilityMeasure μ] :
+    IsProbabilityMeasure (μ.comap ((↑) : μ.support → X)) :=
+  (MeasurableEmbedding.subtypeVal
+    (Measure.isClosed_support (μ := μ)).measurableSet).isProbabilityMeasure_comap
+      (by simpa using Measure.support_mem_ae (μ := μ))
+
+/-- In a hereditarily Lindelöf space with measurable open sets, pulling a measure back to its
+topological support yields a measure positive on nonempty open sets. -/
+instance isOpenPosMeasure_comap_support {X : Type*} [TopologicalSpace X]
+    [HereditarilyLindelofSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
+    (μ : Measure X) : (μ.comap ((↑) : μ.support → X)).IsOpenPosMeasure where
+  open_pos U hU := by
+    rintro ⟨x, hx⟩
+    obtain ⟨O, hO, rfl⟩ := isOpen_induced_iff.mp hU
+    rw [(MeasurableEmbedding.subtypeVal
+        (Measure.isClosed_support (μ := μ)).measurableSet).comap_apply,
+      Subtype.image_preimage_coe, Set.inter_comm,
+      measure_inter_conull (Measure.measure_compl_support (μ := μ))]
+    exact ((mem_support_iff_forall (x : X)).mp x.property O (hO.mem_nhds hx)).ne'
+
+/-- A measure on a topological measurable space is a compactly supported probability measure if it
+is a probability measure and its topological support is compact. -/
+abbrev IsCompactProbabilityMeasure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    (μ : Measure X) : Prop :=
+  IsProbabilityMeasure μ ∧ IsCompact μ.support
+
 variable {X Y : Type*} [TopologicalSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   [TopologicalSpace Y] [MeasurableSpace Y] [BorelSpace Y]
 
@@ -204,6 +245,20 @@ theorem support_map_of_isInducing_of_isClosed_range (μ : Measure X) {f : X → 
 theorem support_map_homeomorph (μ : Measure X) (e : X ≃ₜ Y) :
     (μ.map e).support = e '' μ.support :=
   support_map_of_isInducing_of_isClosed_range μ e.isInducing e.isClosedEmbedding.isClosed_range
+
+/-- Pushing a measure forward along a homeomorphism preserves compactness of its topological
+support. -/
+@[simp]
+theorem isCompact_support_map_homeomorph_iff (μ : Measure X) (e : X ≃ₜ Y) :
+    IsCompact (μ.map e).support ↔ IsCompact μ.support := by
+  rw [support_map_homeomorph, e.isCompact_image]
+
+/-- Pushing a measure forward along a homeomorphism preserves being a compactly supported
+probability measure. -/
+@[simp]
+theorem isCompactProbabilityMeasure_map_homeomorph_iff (μ : Measure X) (e : X ≃ₜ Y) :
+    (μ.map e).IsCompactProbabilityMeasure ↔ μ.IsCompactProbabilityMeasure := by
+  simp [IsCompactProbabilityMeasure, Measure.isProbabilityMeasure_map_iff e.measurable.aemeasurable]
 
 /-- Casting a natural-valued law to the reals casts its support: the cast is a closed embedding,
 so no new real limit points appear. -/

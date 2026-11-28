@@ -62,6 +62,8 @@ and the moment series determine each other.
   `TauCeti.IsFreelyIndependentElements.rSeries_add`.
 * `TauCeti.rSeries_add_algebraMap`, `TauCeti.momentSeries_smul`,
   `TauCeti.freeCumulantSeries_smul` and `TauCeti.rSeries_smul` — shifts and dilations.
+* `TauCeti.map_momentSeries`, `TauCeti.map_freeCumulantSeries`, `TauCeti.map_rSeries` and
+  `TauCeti.rSeries_eval` — ring-homomorphism transport and point evaluation of formal series.
 
 ## References
 
@@ -100,6 +102,12 @@ theorem constantCoeff_momentSeries : constantCoeff (momentSeries φ a) = φ 1 :=
   rw [← coeff_zero_eq_constantCoeff_apply, coeff_momentSeries, pow_zero]
 
 end MomentSeries
+
+/-- Mapping the moment series by a ring homomorphism gives the moment series of `g ∘ φ`. -/
+@[simp]
+theorem map_momentSeries {S : Type*} [Semiring R] [Semiring S] [Monoid A] (g : R →+* S)
+    (φ : A → R) (a : A) : PowerSeries.map g (momentSeries φ a) = momentSeries (g ∘ φ) a := by
+  ext n; simp
 
 /-- Rescaling `a` by `c` rescales its moment series: `M_{c a}(z) = M_a(c z)`. -/
 theorem momentSeries_smul [CommSemiring R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R) (c : R)
@@ -279,6 +287,18 @@ theorem freeCumulantSeries_one (hφ : φ 1 = 1) :
 
 end Monoid
 
+/-- Mapping the free cumulant series by a ring homomorphism gives that of `g ∘ φ`. -/
+@[simp]
+theorem map_freeCumulantSeries {S : Type*} [CommRing S] [Monoid A] (g : R →+* S) (φ : A → R)
+    (a : A) : PowerSeries.map g (freeCumulantSeries φ a) = freeCumulantSeries (g ∘ φ) a := by
+  ext n; simp
+
+/-- Mapping the R-series by a ring homomorphism gives the R-series of `g ∘ φ`. -/
+@[simp]
+theorem map_rSeries {S : Type*} [CommRing S] [Monoid A] (g : R →+* S) (φ : A → R) (a : A) :
+    PowerSeries.map g (rSeries φ a) = rSeries (g ∘ φ) a := by
+  ext n; simp
+
 section Algebra
 
 variable [Semiring A] [Algebra R A] {φ : A →ₗ[R] R}
@@ -322,6 +342,14 @@ free cumulant is its mean. -/
 theorem rSeries_algebraMap (hφ : φ 1 = 1) (c : R) :
     rSeries φ (algebraMap R A c) = PowerSeries.C c := by
   simpa using rSeries_add_algebraMap hφ 0 c
+
+/-- Under point evaluation `f ↦ f x`, every function `g : X → R` has constant R-series `C (g x)`. -/
+@[simp]
+theorem rSeries_eval {X : Type*} (x : X) (g : X → R) :
+    rSeries (fun f : X → R => f x) g = PowerSeries.C (g x) := by
+  have hm : momentSeries (fun f : X → R => f x) g =
+      momentSeries (LinearMap.id : R →ₗ[R] R) (algebraMap R R (g x)) := by ext n; simp
+  rw [rSeries_congr _ _ hm, rSeries_algebraMap rfl]
 
 /-- *The R-series is additive on free families*: if each `a k` lies in the subalgebra `B k`, with
 `B` freely independent for a normalised `φ`, then `R_{∑ k ∈ T, a k} = ∑ k ∈ T, R_{a k}`. -/

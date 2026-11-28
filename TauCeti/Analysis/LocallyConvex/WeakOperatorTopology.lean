@@ -98,6 +98,21 @@ theorem closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM [Cont
 
 end ContinuousLinearMapWOT
 
+namespace ContinuousLinearMapWOT
+
+/-- The inverse of `ContinuousLinearMapWOT.algEquiv` sends each continuous linear map `T` to
+`ofCLM T`. -/
+@[simp]
+theorem algEquiv_symm_apply {𝕜₁ E : Type*} [NormedField 𝕜₁] [AddCommGroup E] [TopologicalSpace E]
+    [Module 𝕜₁ E] (S : Type*) [CommSemiring S] [Module S E] [SMulCommClass 𝕜₁ S E] [SMul S 𝕜₁]
+    [IsScalarTower S 𝕜₁ E] [ContinuousConstSMul S E] [IsTopologicalAddGroup E] (T : E →L[𝕜₁] E) :
+    (algEquiv (𝕜₁ := 𝕜₁) (E := E) S).symm T = ofCLM T := by
+  rw [AlgEquiv.symm_apply_eq]
+  ext x
+  simp
+
+end ContinuousLinearMapWOT
+
 namespace Set
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [TopologicalSpace E]

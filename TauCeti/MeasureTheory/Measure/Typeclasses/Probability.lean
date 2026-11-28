@@ -32,6 +32,7 @@ simplifies totalized distribution laws that reduce to zero outside their paramet
 * `MeasureTheory.Measure.measure_singleton_add_measure_singleton_le`: the masses of two distinct
   points add up to at most one.
 * `MeasureTheory.not_isProbabilityMeasure_zero`
+* `MeasureTheory.eq_zero_iff_not_isProbabilityMeasure`
 * `Finset.norm_prod_measureReal_le_one`: a finite product of real masses of a zero-or-probability
   measure has norm at most one.
 
@@ -54,6 +55,12 @@ law. -/
 theorem not_isProbabilityMeasure_zero {α : Type*} [MeasurableSpace α] :
     ¬ IsProbabilityMeasure (0 : Measure α) :=
   fun _ ↦ IsProbabilityMeasure.ne_zero (0 : Measure α) rfl
+
+/-- A zero-or-probability measure equals `0` iff it is not a probability measure. -/
+theorem eq_zero_iff_not_isProbabilityMeasure {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsZeroOrProbabilityMeasure μ] : μ = 0 ↔ ¬ IsProbabilityMeasure μ :=
+  ⟨fun h0 hp => not_isProbabilityMeasure_zero (h0 ▸ hp),
+    fun hnp => (eq_zero_or_isProbabilityMeasure μ).resolve_right hnp⟩
 
 end MeasureTheory
 
