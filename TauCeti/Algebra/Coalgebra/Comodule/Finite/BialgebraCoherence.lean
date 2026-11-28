@@ -16,8 +16,8 @@ A coalgebra's multiplication and unit can be supplied as coalgebra maps before t
 laws are known. If finite comodules have tensor objects with the usual underlying
 modules, the product formula for matrix coefficients transfers the ordinary associator,
 left unitor and flip to associativity, a left unit and commutativity on the coalgebra.
-For a coalgebra that is free over a principal ideal domain, every element is tested using a
-finite regular subcoalgebra and its counit; over a field, freeness is automatic.
+For a coalgebra that is projective over a commutative semiring, every element is tested using
+a finite regular subcomodule and its counit; over a field, projectivity is automatic.
 
 `FGComoduleCat.TensorPresentation` records the tensor objects and their module
 identifications. `TensorPresentation.CoefficientCompatibility` asks that the three ordinary
@@ -188,10 +188,10 @@ end TensorPresentation
 
 end Semiring
 
-section PID
+section Projective
 
-variable {K : Type u} [CommRing K] [IsDomain K] [IsPrincipalIdealRing K] {B : Type v}
-variable [AddCommGroup B] [Module K B] [cB : Coalgebra K B] [Module.Free K B]
+variable {K : Type u} [CommSemiring K] {B : Type v}
+variable [AddCommMonoid B] [Module K B] [Coalgebra K B] [Module.Projective K B]
 
 namespace TensorPresentation.CoefficientCompatibility
 
@@ -222,6 +222,20 @@ theorem one_mul (a : B) : μ (e ⊗ₜ[K] a) = a := by
 /-- The right unit law follows from the left unit law and commutativity. -/
 theorem mul_one (a : B) : μ (a ⊗ₜ[K] e) = a := by
   rw [h.mul_comm, h.one_mul]
+
+end TensorPresentation.CoefficientCompatibility
+
+end Projective
+
+section Ring
+
+variable {K : Type u} [CommSemiring K] {B : Type v}
+variable [AddCommGroup B] [Module K B] [cB : Coalgebra K B] [Module.Projective K B]
+
+namespace TensorPresentation.CoefficientCompatibility
+
+variable {T : TensorPresentation (K := K) (B := B)}
+variable {μ : B ⊗[K] B →ₗ[K] B} {e : B} (h : T.CoefficientCompatibility μ e)
 
 /-- The commutative ring with multiplication `μ` and unit `e`, retaining the original additive
 group. The scalar algebra is constructed separately so its module is the original one too.
@@ -336,7 +350,7 @@ theorem bialgebra_algebraMap (r : K) :
 
 end TensorPresentation.CoefficientCompatibility
 
-end PID
+end Ring
 
 section Scalar
 

@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Regular
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trivial
-public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Finite
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
 /-!
@@ -39,8 +39,8 @@ subquotient hull of one comodule `W` consists exactly of the comodules with coef
 
 ## Main declarations
 
-* `TauCeti.FGComoduleCat.exists_matrixCoefficient_eq`: every element of a coalgebra free over a
-  principal ideal domain is a coefficient of a finite comodule.
+* `TauCeti.FGComoduleCat.exists_matrixCoefficient_eq`: every element of a projective coalgebra
+  over a commutative semiring is a coefficient of a finite comodule.
 * `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_le_of_epi`,
   `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_le_of_mono`,
   `TauCeti.FGComoduleCat.matrixCoefficientSubmodule_eq_of_iso`: functoriality of `C(-)`.
@@ -122,25 +122,24 @@ theorem matrixCoefficientSubmodule_biproduct {ι : Type} [Finite ι]
 
 end Ring
 
-section PID
+section Semiring
 
-variable {K : Type u} [CommRing K] [IsDomain K] [IsPrincipalIdealRing K] {B : Type v}
-variable [AddCommGroup B] [Module K B] [Coalgebra K B] [Module.Free K B]
+variable {K : Type u} [CommSemiring K] {B : Type v}
+variable [AddCommMonoid B] [Module K B] [Coalgebra K B] [Module.Projective K B]
 
 /-- Every coalgebra element is a coefficient of a finite comodule: take a finite regular
-subcoalgebra containing it and pair with the restricted counit. This holds for coalgebras
-that are free over a principal ideal domain, in particular for coalgebras over a field. -/
+subcomodule containing it and pair with the restricted counit. This holds for coalgebras
+that are projective over a commutative semiring, in particular for coalgebras over a field. -/
 theorem exists_matrixCoefficient_eq (b : B) :
     ∃ (M : FGComoduleCat.{u, v, v} K B) (φ : Module.Dual K M) (m : M),
       Comodule.matrixCoefficient (C := B) φ m = b := by
-  let : Module.Flat K B := Module.Flat.of_free
-  obtain ⟨D, hD, hb⟩ := Subcoalgebra.exists_finite_subcoalgebra_mem (R := K) b
-  let : Module.Finite K D.toRegularSubcomodule := hD
-  refine ⟨of (R := K) (C := B) D.toRegularSubcomodule,
-    Coalgebra.counit ∘ₗ SMulMemClass.subtype D.toRegularSubcomodule, ⟨b, hb⟩, ?_⟩
-  exact Comodule.matrixCoefficient_counit_comp_subtype D.toRegularSubcomodule ⟨b, hb⟩
+  obtain ⟨D, hD, hb⟩ := Subcomodule.exists_finite_subcomodule_mem (R := K) (C := B) b
+  let : Module.Finite K D := hD
+  refine ⟨of (R := K) (C := B) D,
+    Coalgebra.counit ∘ₗ SMulMemClass.subtype D, ⟨b, hb⟩, ?_⟩
+  exact Comodule.matrixCoefficient_counit_comp_subtype D ⟨b, hb⟩
 
-end PID
+end Semiring
 
 section Field
 
