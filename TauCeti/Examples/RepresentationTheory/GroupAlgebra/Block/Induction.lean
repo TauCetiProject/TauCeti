@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block.Basic
-public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.BrauerProjection
+public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Brauer.Projection
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Induction
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.PGroup
@@ -16,7 +16,7 @@ import TauCeti.Algebra.Group.Subgroup.ZPowers
 /-!
 # Block induction and the Brauer correspondent on `𝔽₂[S₃]`
 
-Let `τ = (0 1)` and `D = ⟨τ⟩ ≤ S₃`, of order `2`. Then `N_{S₃}(D) = C_{S₃}(D) = D`, and `𝔽₂[D]`
+Let `s = (0 1)` and `D = ⟨s⟩ ≤ S₃`, of order `2`. Then `N_{S₃}(D) = C_{S₃}(D) = D`, and `𝔽₂[D]`
 has the single block `1` (`TauCeti.isBlockIdempotent_iff_eq_one_of_isPGroup`), of defect group
 `D`. With `ρ` the `3`-cycle `finRotate 3`:
 
@@ -32,16 +32,16 @@ namespace TauCeti.BlockInductionExamples
 
 open _root_.MonoidAlgebra TauCeti.GroupAlgebraBlockExamples TauCeti.PrincipalBlockDefectExamples
 
-/-- The subgroup `D = ⟨τ⟩` of order `2`. -/
-abbrev D : Subgroup S₃ := Subgroup.zpowers τ
+/-- The subgroup `D = ⟨s⟩` of order `2`. -/
+abbrev D : Subgroup S₃ := Subgroup.zpowers s
 
-/-- The elements of `D = ⟨τ⟩` are `1` and `τ`. -/
-theorem mem_D_iff {g : S₃} : g ∈ D ↔ g = 1 ∨ g = τ :=
+/-- The elements of `D = ⟨s⟩` are `1` and `s`. -/
+theorem mem_D_iff {g : S₃} : g ∈ D ↔ g = 1 ∨ g = s :=
   Subgroup.mem_zpowers_iff_of_sq_eq_one (by decide)
 
-/-- `D = ⟨τ⟩` is a `2`-group. -/
+/-- `D = ⟨s⟩` is a `2`-group. -/
 theorem isPGroup_D : IsPGroup 2 D :=
-  IsPGroup.of_card card_zpowers_τ
+  IsPGroup.of_card card_zpowers_s
 
 /-- `C_{S₃}(D) = D`. -/
 theorem centralizer_D : Subgroup.centralizer (D : Set S₃) = D := by
@@ -53,7 +53,7 @@ theorem centralizer_D : Subgroup.centralizer (D : Set S₃) = D := by
 /-- `N_{S₃}(D) = D`: `D` is self-normalizing. -/
 theorem normalizer_D : Subgroup.normalizer (D : Set S₃) = D := by
   refine le_antisymm (fun g hg ↦ ?_) Subgroup.le_normalizer
-  have h := (Subgroup.mem_normalizer_iff.1 hg τ).1 (Subgroup.mem_zpowers τ)
+  have h := (Subgroup.mem_normalizer_iff.1 hg s).1 (Subgroup.mem_zpowers s)
   rw [mem_D_iff] at h ⊢
   clear hg
   revert g

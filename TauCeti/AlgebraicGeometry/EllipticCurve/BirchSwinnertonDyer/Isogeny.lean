@@ -5,10 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.Ratio
 public import TauCeti.AlgebraicGeometry.EllipticCurve.BirchSwinnertonDyer.Quotient
+public import TauCeti.AlgebraicGeometry.EllipticCurve.BirchSwinnertonDyer.Statement
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Isogeny.Finite
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.Regulator.Isogeny
+import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Isogeny.ProductFormula
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
+import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.VariableChange
+import TauCeti.AlgebraicGeometry.EllipticCurve.LFunction.Isogeny
 
 /-!
 # The Birch–Swinnerton-Dyer quotient along an isogeny
@@ -29,23 +35,29 @@ and combined with the transformation of `Reg / #tors²` under `ψ`
 If moreover `ψ` and `ψ̂` induce the zero map on Shafarevich–Tate groups, then `Sha(E₁)[ψ]` and
 `Sha(E₂)[ψ̂]` are the whole groups `Sha(E₁)` and `Sha(E₂)`. When `Sha(E₂)` is finite, every
 nonzero morphism `f : E₁ → E₂` has a multiple that is an isogeny killing Sha in both directions,
-namely `ψ = #Sha(E₂) • f` (`TauCeti.Isogeny.Hom.exists_isogeny_shafarevichTateMap_eq_zero`). In
-characteristic zero this `ψ` and its dual are separable, as every isogeny is.
+namely `ψ = #Sha(E₂) • f` (`TauCeti.Isogeny.Hom.exists_isogeny_shafarevichTateMap_eq_zero`); over a
+number field (and in particular over `ℚ`), `TauCeti.Isogeny.Hom.exists_isogeny_shaMap_eq_zero`
+states this in terms of `TauCeti.Isogeny.Hom.shaMap`, which does not depend on `τ`. Accordingly,
+`TauCeti.Isogeny.bsdQuotient_div_bsdQuotient` takes its vanishing hypotheses on `shaMap`, while
+`TauCeti.Isogeny.Hom.exists_isogeny_bsdQuotient_div_bsdQuotient` obtains both vanishing conditions
+internally from `exists_isogeny_shaMap_eq_zero`.
 
-Over `ℚ`, with `Sha` finite, this expresses the ratio of the Birch–Swinnerton-Dyer quotients of
-`E₁` and `E₂` through `ψ`:
+Over `ℚ`, for an arbitrary isogeny `φ : E₁ → E₂` with `Sha` finite, combining Cassels' global
+period–Tamagawa–Kummer product formula
+(`TauCeti.Isogeny.minimalRealPeriod_mul_tamagawaProduct_mul_kummerRatioProduct`),
 
-  `BSD(E₁) / BSD(E₂) = (#Sel_ψ / #Sel_ψ̂) / (#E₁(ℚ)[ψ] / #E₂(ℚ)[ψ̂]) ·
-    (Ω(E₁) · ∏_p c_p(E₁)) / (Ω(E₂) · ∏_p c_p(E₂))`.
+  `Ω(E₁) · (∏_p c_p(E₁)) · φ.kummerRatioProduct = Ω(E₂) · (∏_p c_p(E₂))`,
 
-So Cassels' theorem that `BSD(E₁) = BSD(E₂)` is equivalent to the identity
+with the regulator transformation gives the master algebraic identity
 
-  `#Sel_ψ / #Sel_ψ̂ = (#E₁(ℚ)[ψ] / #E₂(ℚ)[ψ̂]) · (Ω(E₂) · ∏_p c_p(E₂)) / (Ω(E₁) · ∏_p c_p(E₁))`
+  `E₁.bsdQuotient · #Sha(E₂) · φ.kummerRatioProduct · φ.dual.kummerRatio =`
+  `  E₂.bsdQuotient · #Sha(E₁) · φ.kummerRatio`,
 
-for this one isogeny `ψ`. This is the shape of Cassels' formula for the ratio of the orders of the
-Selmer groups of an isogeny and its dual, once the product of its local factors is evaluated
-through real periods and Tamagawa numbers. Working with `ψ` rather than with `f` brings in the
-orders of the whole Shafarevich–Tate groups, and not only of their parts killed by `f` and `f̂`.
+and its Selmer-and-`Sha`-image form, reducing the isogeny invariance of
+`WeierstrassCurve.bsdQuotient` and `WeierstrassCurve.BirchSwinnertonDyer` to the global Selmer
+ratio formula and `#φ(Sha(E₁)) = #φ̂(Sha(E₂))`. For degree-one isogenies, and in particular changes
+of Weierstrass variables, `WeierstrassCurve.bsdQuotient` is preserved whenever `Sha` is finite,
+while the full Birch–Swinnerton-Dyer conjecture is unconditionally preserved.
 
 ## Main results
 
@@ -57,6 +69,24 @@ orders of the whole Shafarevich–Tate groups, and not only of their parts kille
   `ℚ` along such an isogeny.
 * `TauCeti.Isogeny.Hom.exists_isogeny_bsdQuotient_div_bsdQuotient`: for every nonzero morphism
   over `ℚ`, the same ratio along the isogeny `#Sha(E₂) • f`.
+* `TauCeti.Isogeny.bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual`: the
+  master algebraic relation between `E₁.bsdQuotient` and `E₂.bsdQuotient` via `Sha` and the
+  Kummer ratios.
+* `TauCeti.Isogeny.bsdQuotient_mul_card_selmerGroup_dual`: the Selmer-and-`Sha`-image form of the
+  relation for any family `τ` of embeddings of separable closures over the places of `ℚ`.
+* `TauCeti.Isogeny.bsdQuotient_eq_of_card_selmerGroup_and_card_range_shaMap`:
+  reduction of `E₁.bsdQuotient = E₂.bsdQuotient` to the global Selmer ratio and equality of image
+  orders on `Sha`.
+* `TauCeti.Isogeny.birchSwinnertonDyer_iff_of_bsdQuotient_eq`: reduction of
+  `E₁.BirchSwinnertonDyer ↔ E₂.BirchSwinnertonDyer` along an isogeny to equality of BSD quotients.
+* `TauCeti.Isogeny.bsdQuotient_eq_of_degree_eq_one`: invariance of the BSD quotient under
+  degree-one isogenies when `Sha` is finite.
+* `TauCeti.Isogeny.birchSwinnertonDyer_iff_of_degree_eq_one`: unconditional invariance of the BSD
+  conjecture under degree-one isogenies.
+* `WeierstrassCurve.VariableChange.bsdQuotient_smul`: invariance of the BSD quotient under a
+  change of Weierstrass variables when `Sha` is finite.
+* `WeierstrassCurve.VariableChange.birchSwinnertonDyer_smul_iff`: unconditional invariance of the
+  BSD conjecture under a change of Weierstrass variables.
 
 ## References
 
@@ -73,6 +103,172 @@ namespace TauCeti.Isogeny
 
 open Height WeierstrassCurve WeierstrassCurve.Affine TauCeti.ContCohomology
 open Hom (ofIsogeny)
+
+section BSDQuotient
+
+private theorem kummerRatio_mul_card_ker_real {A B : WeierstrassCurve ℚ}
+    [A.IsElliptic] [B.IsElliptic] (ψ : Isogeny A.toAffine B.toAffine) :
+    (ψ.kummerRatio : ℝ) * Nat.card (Hom.ofIsogeny ψ).pointMapHom.ker =
+      (Hom.ofIsogeny ψ).pointMapHom.range.index := by
+  exact_mod_cast ψ.kummerRatio_mul_card_ker
+
+variable {E₁ E₂ : WeierstrassCurve ℚ} [E₁.IsElliptic] [E₂.IsElliptic]
+
+/-- **Master algebraic relation for the Birch–Swinnerton-Dyer quotient under an isogeny**:
+`E₁.bsdQuotient · #Sha(E₂) · φ.kummerRatioProduct · φ.dual.kummerRatio =`
+`  E₂.bsdQuotient · #Sha(E₁) · φ.kummerRatio`.
+
+This combines Cassels' global period–Tamagawa–Kummer product formula with the transformation of
+the regulator and squared torsion order along `φ`. -/
+theorem bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
+    [Finite E₁.sha] [Finite E₂.sha] (φ : Isogeny E₁.toAffine E₂.toAffine) :
+    E₁.bsdQuotient * Nat.card E₂.sha * φ.kummerRatioProduct * φ.dual.kummerRatio =
+      E₂.bsdQuotient * Nat.card E₁.sha * φ.kummerRatio := by
+  have hpt := φ.minimalRealPeriod_mul_tamagawaProduct_mul_kummerRatioProduct
+  have hreg := Hom.regulator_div_card_torsion_sq_mul_index_dual_div_card_ker_eq
+    (f := Hom.ofIsogeny φ) (Hom.ofIsogeny_ne_zero φ)
+  rw [Hom.dual_ofIsogeny] at hreg
+  have := (Hom.ofIsogeny φ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ)
+  have := (Hom.ofIsogeny φ.dual).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ.dual)
+  rw [← kummerRatio_mul_card_ker_real φ, ← kummerRatio_mul_card_ker_real φ.dual,
+    mul_div_cancel_right₀ (φ.dual.kummerRatio : ℝ) (Nat.cast_ne_zero.2 Nat.card_pos.ne'),
+    mul_div_cancel_right₀ (φ.kummerRatio : ℝ) (Nat.cast_ne_zero.2 Nat.card_pos.ne')] at hreg
+  rw [E₁.bsdQuotient_def, E₂.bsdQuotient_def]
+  calc E₁.minimalRealPeriod * E₁.toAffine.regulator * Nat.card E₁.sha *
+          E₁.tamagawaProduct (R := ℤ) /
+          Nat.card (AddCommGroup.torsion E₁.toAffine.Point) ^ 2 *
+        Nat.card E₂.sha * φ.kummerRatioProduct * φ.dual.kummerRatio
+      = (E₁.minimalRealPeriod * E₁.tamagawaProduct (R := ℤ) * φ.kummerRatioProduct) *
+          (E₁.toAffine.regulator / Nat.card (AddCommGroup.torsion E₁.toAffine.Point) ^ 2 *
+            φ.dual.kummerRatio) *
+          (Nat.card E₁.sha * Nat.card E₂.sha) := by ring
+    _ = (E₂.minimalRealPeriod * E₂.tamagawaProduct (R := ℤ)) *
+          (φ.kummerRatio *
+            (E₂.toAffine.regulator / Nat.card (AddCommGroup.torsion E₂.toAffine.Point) ^ 2)) *
+          (Nat.card E₁.sha * Nat.card E₂.sha) := by rw [hpt, hreg]
+    _ = E₂.minimalRealPeriod * E₂.toAffine.regulator * Nat.card E₂.sha *
+          E₂.tamagawaProduct (R := ℤ) /
+          Nat.card (AddCommGroup.torsion E₂.toAffine.Point) ^ 2 *
+        Nat.card E₁.sha * φ.kummerRatio := by ring
+
+/-- **Selmer-and-`Sha`-image identity for the Birch–Swinnerton-Dyer quotient under an isogeny**:
+for any family `τ` of embeddings of separable closures over the places of `ℚ`,
+
+  `E₁.bsdQuotient · (#Sel_φ̂ · #E₁(ℚ)[φ] · φ.kummerRatioProduct) · #φ̂(Sha(E₂)) =`
+  `  E₂.bsdQuotient · (#Sel_φ · #E₂(ℚ)[φ̂]) · #φ(Sha(E₁))`. -/
+theorem bsdQuotient_mul_card_selmerGroup_dual [Finite E₁.sha] [Finite E₂.sha]
+    (φ : Isogeny E₁.toAffine E₂.toAffine)
+    (τ : ∀ v : GlobalNumberFields.Place ℚ,
+      SeparableClosure ℚ →ₐ[ℚ] SeparableClosure v.Completion) :
+    E₁.bsdQuotient *
+        (Nat.card (φ.dual.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker *
+          (φ.kummerRatioProduct : ℝ)) *
+        Nat.card (Hom.ofIsogeny φ.dual).shaMap.range =
+      E₂.bsdQuotient *
+        (Nat.card (φ.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker) *
+        Nat.card (Hom.ofIsogeny φ).shaMap.range := by
+  have hbase := φ.bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
+  have hsha₁ : (Nat.card E₁.sha : ℝ) =
+      Nat.card (φ.shafarevichTateGroupKer τ) * Nat.card (Hom.ofIsogeny φ).shaMap.range := by
+    exact_mod_cast φ.card_sha_eq_card_shafarevichTateGroupKer_mul τ
+  have hsha₂ : (Nat.card E₂.sha : ℝ) =
+      Nat.card (φ.dual.shafarevichTateGroupKer τ) *
+        Nat.card (Hom.ofIsogeny φ.dual).shaMap.range := by
+    exact_mod_cast φ.dual.card_sha_eq_card_shafarevichTateGroupKer_mul τ
+  have hsel₁ : (Nat.card (φ.selmerGroup τ) : ℝ) =
+      (Hom.ofIsogeny φ).pointMapHom.range.index * Nat.card (φ.shafarevichTateGroupKer τ) := by
+    exact_mod_cast φ.card_selmerGroup τ
+  have hsel₂ : (Nat.card (φ.dual.selmerGroup τ) : ℝ) =
+      (Hom.ofIsogeny φ.dual).pointMapHom.range.index *
+        Nat.card (φ.dual.shafarevichTateGroupKer τ) := by
+    exact_mod_cast φ.dual.card_selmerGroup τ
+  rw [hsel₁, hsel₂, ← kummerRatio_mul_card_ker_real φ, ← kummerRatio_mul_card_ker_real φ.dual]
+  rw [hsha₁, hsha₂] at hbase
+  linear_combination
+    (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker *
+      Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker : ℝ) * hbase
+
+/-- **Cassels' reduction of isogeny invariance of the BSD quotient**:
+`E₁.bsdQuotient = E₂.bsdQuotient` follows from the global Selmer ratio formula and the equality of
+image orders `#φ(Sha(E₁)) = #φ̂(Sha(E₂))` for any family `τ` of embeddings of separable closures
+over the places of `ℚ`. -/
+theorem bsdQuotient_eq_of_card_selmerGroup_and_card_range_shaMap
+    [Finite E₁.sha] [Finite E₂.sha] (φ : Isogeny E₁.toAffine E₂.toAffine)
+    (τ : ∀ v : GlobalNumberFields.Place ℚ,
+      SeparableClosure ℚ →ₐ[ℚ] SeparableClosure v.Completion)
+    (hsel : (Nat.card (φ.selmerGroup τ) : ℚ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker =
+      Nat.card (φ.dual.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker *
+        φ.kummerRatioProduct)
+    (hsha : Nat.card (Hom.ofIsogeny φ).shaMap.range =
+      Nat.card (Hom.ofIsogeny φ.dual).shaMap.range) :
+    E₁.bsdQuotient = E₂.bsdQuotient := by
+  have h := φ.bsdQuotient_mul_card_selmerGroup_dual τ
+  have hselR :
+      (Nat.card (φ.selmerGroup τ) : ℝ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker =
+        Nat.card (φ.dual.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ).pointMapHom.ker *
+          (φ.kummerRatioProduct : ℝ) := by
+    exact_mod_cast hsel
+  have : Finite (φ.selmerGroup τ) := φ.finite_selmerGroup_place τ
+  have : Finite (Hom.ofIsogeny φ.dual).pointMapHom.ker :=
+    (Hom.ofIsogeny φ.dual).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero φ.dual)
+  have hpos₁ :
+      (0 : ℝ) < Nat.card (φ.selmerGroup τ) * Nat.card (Hom.ofIsogeny φ.dual).pointMapHom.ker :=
+    mul_pos (Nat.cast_pos.2 Nat.card_pos) (Nat.cast_pos.2 Nat.card_pos)
+  have hpos₂ : (0 : ℝ) < Nat.card (Hom.ofIsogeny φ).shaMap.range :=
+    Nat.cast_pos.2 Nat.card_pos
+  rw [← hselR, ← hsha] at h
+  exact mul_right_cancel₀ hpos₁.ne' (mul_right_cancel₀ hpos₂.ne' h)
+
+/-- **Isogeny invariance of the full Birch–Swinnerton-Dyer conjecture reduces to equality of the
+BSD quotients**: isogenous elliptic curves over `ℚ` already share their `L`-function, Mordell–Weil
+rank, and finiteness of `Sha`. -/
+theorem birchSwinnertonDyer_iff_of_bsdQuotient_eq (φ : Isogeny E₁.toAffine E₂.toAffine)
+    (h : ∀ [Finite E₁.sha] [Finite E₂.sha], E₁.bsdQuotient = E₂.bsdQuotient) :
+    E₁.BirchSwinnertonDyer ↔ E₂.BirchSwinnertonDyer := by
+  have hL : E₁.LFunction = E₂.LFunction := φ.LFunction_eq
+  have hrank : Module.finrank ℤ E₁.toAffine.Point = Module.finrank ℤ E₂.toAffine.Point := by
+    rw [← finrank_quotient_eq_of_le_torsion (M' := Submodule.torsion ℤ E₁.toAffine.Point) le_rfl,
+      ← finrank_quotient_eq_of_le_torsion (M' := Submodule.torsion ℤ E₂.toAffine.Point) le_rfl]
+    exact Hom.finrank_pointModTorsion_eq (f := Hom.ofIsogeny φ) (Hom.ofIsogeny_ne_zero φ)
+  have hsha : Finite E₁.sha ↔ Finite E₂.sha :=
+    (Hom.ofIsogeny φ).finite_sha_iff (Hom.ofIsogeny_ne_zero φ)
+  have imp {A B : WeierstrassCurve ℚ} [A.IsElliptic] [B.IsElliptic]
+      (hL' : A.LFunction = B.LFunction)
+      (hrank' : Module.finrank ℤ A.toAffine.Point = Module.finrank ℤ B.toAffine.Point)
+      (hsha' : Finite B.sha → Finite A.sha)
+      (hq : ∀ [Finite A.sha] [Finite B.sha], A.bsdQuotient = B.bsdQuotient)
+      (hA : A.BirchSwinnertonDyer) : B.BirchSwinnertonDyer := by
+    refine ⟨fun F U hF hU ↦ ?_, fun hF hU ↦ ?_⟩
+    · rw [← hrank']
+      exact hA.analyticOrderAt_eq_finrank (by rwa [hL']) hU
+    · have : Finite A.sha := hsha' inferInstance
+      rw [← hq]
+      exact hA.leadingCoeff_eq_bsdQuotient (by rwa [hL']) hU
+  exact ⟨imp hL hrank hsha.2 h, imp hL.symm hrank.symm hsha.1 fun {_ _} ↦ h.symm⟩
+
+/-- **Degree-one isogenies preserve the Birch–Swinnerton-Dyer quotient** when the Shafarevich–Tate
+groups are finite. -/
+theorem bsdQuotient_eq_of_degree_eq_one [Finite E₁.sha] [Finite E₂.sha]
+    (φ : Isogeny E₁.toAffine E₂.toAffine) (hφ : φ.degree = 1) :
+    E₁.bsdQuotient = E₂.bsdQuotient := by
+  have h := φ.bsdQuotient_mul_card_sha_mul_kummerRatioProduct_mul_kummerRatio_dual
+  have hsha : Nat.card E₁.sha = Nat.card E₂.sha :=
+    (Hom.ofIsogeny φ).card_sha_eq_of_degree_eq_one (by rw [Hom.degree_ofIsogeny, hφ])
+  have hk₁ : φ.kummerRatio = 1 := kummerRatio_eq_one_of_degree_eq_one φ hφ
+  have hk₂ : φ.dual.kummerRatio = 1 :=
+    kummerRatio_eq_one_of_degree_eq_one φ.dual (by rw [degree_dual, hφ])
+  have hkp : φ.kummerRatioProduct = 1 := kummerRatioProduct_eq_one_of_degree_eq_one φ hφ
+  rw [hk₁, hk₂, hkp, hsha] at h
+  simp only [Rat.cast_one, mul_one] at h
+  have hpos : (Nat.card E₂.sha : ℝ) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
+  exact mul_right_cancel₀ hpos h
+
+/-- **Degree-one isogenies unconditionally preserve the Birch–Swinnerton-Dyer conjecture.** -/
+theorem birchSwinnertonDyer_iff_of_degree_eq_one (φ : Isogeny E₁.toAffine E₂.toAffine)
+    (hφ : φ.degree = 1) : E₁.BirchSwinnertonDyer ↔ E₂.BirchSwinnertonDyer :=
+  birchSwinnertonDyer_iff_of_bsdQuotient_eq φ fun {_ _} ↦ φ.bsdQuotient_eq_of_degree_eq_one hφ
+
+end BSDQuotient
 
 section Regulator
 
@@ -149,38 +345,30 @@ variable {E₁ E₂ : WeierstrassCurve ℚ} [E₁.IsElliptic] [E₂.IsElliptic] 
 with `Ω` the real period of a global minimal equation and `c_p` the local Tamagawa numbers. The
 Selmer groups are cut out at every place of `ℚ`. -/
 theorem bsdQuotient_div_bsdQuotient (ψ : Isogeny E₁.toAffine E₂.toAffine)
-    (h₁ : (ofIsogeny ψ).shafarevichTateMap τ = 0)
-    (h₂ : (ofIsogeny ψ.dual).shafarevichTateMap τ = 0) :
+    (h₁ : (ofIsogeny ψ).shaMap = 0)
+    (h₂ : (ofIsogeny ψ.dual).shaMap = 0) :
     E₁.bsdQuotient / E₂.bsdQuotient =
       (Nat.card (ψ.selmerGroup τ) / Nat.card (ψ.dual.selmerGroup τ)) /
           (Nat.card (ofIsogeny ψ).pointMapHom.ker / Nat.card (ofIsogeny ψ.dual).pointMapHom.ker) *
         (E₁.minimalRealPeriod * E₁.tamagawaProduct (R := ℤ) /
           (E₂.minimalRealPeriod * E₂.tamagawaProduct (R := ℤ))) := by
-  have h :=
-    regulator_mul_card_shafarevichTateGroup_div_card_torsion_sq_mul_card_selmerGroup_dual_eq
-      τ ψ h₁ h₂
-  rw [← E₁.sha_eq_shafarevichTateGroup τ, ← E₂.sha_eq_shafarevichTateGroup τ] at h
-  -- every factor is positive, so the identity can be cleared of denominators
-  have := ψ.finite_selmerGroup_place τ
+  have h := ψ.bsdQuotient_mul_card_selmerGroup_dual τ
+  have hr₁ : Nat.card (ofIsogeny ψ).shaMap.range = 1 := by
+    rw [h₁, AddMonoidHom.range_zero, AddSubgroup.card_bot]
+  have hr₂ : Nat.card (ofIsogeny ψ.dual).shaMap.range = 1 := by
+    rw [h₂, AddMonoidHom.range_zero, AddSubgroup.card_bot]
+  rw [hr₁, hr₂, Nat.cast_one, mul_one, mul_one, kummerRatioProduct_eq_div] at h
   have := ψ.dual.finite_selmerGroup_place τ
   have := (ofIsogeny ψ).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero ψ)
   have := (ofIsogeny ψ.dual).finite_ker_pointMapHom (Hom.ofIsogeny_ne_zero ψ.dual)
-  have := finite_torsion (W := E₁.toAffine)
-  have := finite_torsion (W := E₂.toAffine)
   have := E₁.minimalRealPeriod_pos
   have := E₂.minimalRealPeriod_pos
   have := E₁.tamagawaProduct_pos (R := ℤ)
   have := E₂.tamagawaProduct_pos (R := ℤ)
-  have := E₂.toAffine.regulator_pos
-  have : 0 < Nat.card E₁.sha := Nat.card_pos
-  have : 0 < Nat.card E₂.sha := Nat.card_pos
-  have : 0 < Nat.card (ψ.selmerGroup τ) := Nat.card_pos
+  have := E₂.bsdQuotient_pos
   have : 0 < Nat.card (ψ.dual.selmerGroup τ) := Nat.card_pos
   have : 0 < Nat.card (ofIsogeny ψ).pointMapHom.ker := Nat.card_pos
   have : 0 < Nat.card (ofIsogeny ψ.dual).pointMapHom.ker := Nat.card_pos
-  have : 0 < Nat.card (AddCommGroup.torsion E₁.toAffine.Point) := Nat.card_pos
-  have : 0 < Nat.card (AddCommGroup.torsion E₂.toAffine.Point) := Nat.card_pos
-  rw [bsdQuotient_def, bsdQuotient_def, div_eq_iff (by positivity)]
   field_simp at h ⊢
   linear_combination h
 
@@ -203,11 +391,35 @@ theorem Hom.exists_isogeny_bsdQuotient_div_bsdQuotient {f : Hom E₁.toAffine E�
               Nat.card (ofIsogeny ψ.dual).pointMapHom.ker) *
           (E₁.minimalRealPeriod * E₁.tamagawaProduct (R := ℤ) /
             (E₂.minimalRealPeriod * E₂.tamagawaProduct (R := ℤ))) := by
-  have : Finite (E₂.shafarevichTateGroup τ) := by rwa [← E₂.sha_eq_shafarevichTateGroup τ]
-  obtain ⟨ψ, hψ, h₁, h₂⟩ := f.exists_isogeny_shafarevichTateMap_eq_zero τ hf
-  rw [← E₂.sha_eq_shafarevichTateGroup τ] at hψ
+  obtain ⟨ψ, hψ, h₁, h₂⟩ := f.exists_isogeny_shaMap_eq_zero hf
   exact ⟨ψ, hψ, bsdQuotient_div_bsdQuotient τ ψ h₁ h₂⟩
 
 end Rat
 
 end TauCeti.Isogeny
+
+namespace WeierstrassCurve.VariableChange
+
+/-- **The Birch–Swinnerton-Dyer quotient is invariant under a change of Weierstrass variables**
+when `Sha(E)` is finite. -/
+@[simp]
+theorem bsdQuotient_smul (C : VariableChange ℚ) (E : WeierstrassCurve ℚ) [E.IsElliptic]
+    [Finite E.sha] :
+    (C • E).bsdQuotient = E.bsdQuotient :=
+  (TauCeti.Isogeny.bsdQuotient_eq_of_degree_eq_one
+    (TauCeti.Isogeny.variableChangeIsogeny C rfl)
+    (TauCeti.Isogeny.degree_variableChangeIsogeny C rfl)).symm
+
+/-- **The Birch–Swinnerton-Dyer conjecture is invariant under a change of Weierstrass
+variables.** -/
+@[simp]
+theorem birchSwinnertonDyer_smul_iff (C : VariableChange ℚ) (E : WeierstrassCurve ℚ)
+    [E.IsElliptic] :
+    (C • E).BirchSwinnertonDyer ↔ E.BirchSwinnertonDyer :=
+  (TauCeti.Isogeny.birchSwinnertonDyer_iff_of_degree_eq_one
+    (TauCeti.Isogeny.variableChangeIsogeny C rfl)
+    (TauCeti.Isogeny.degree_variableChangeIsogeny C rfl)).symm
+
+end WeierstrassCurve.VariableChange
+
+end

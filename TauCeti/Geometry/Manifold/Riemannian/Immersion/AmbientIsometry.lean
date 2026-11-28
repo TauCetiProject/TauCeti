@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.MeanCurvature
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.AlongMap
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 
 /-!
 # Immersion geometry under ambient isometries
@@ -42,6 +44,18 @@ inclusion of an open subset of `N` with the restricted metric alike. The input i
 of covariant differentiation along maps,
 `TauCeti.IsLocalRiemannianIsometry.mfderiv_alongMap_of_isLeviCivitaConnection`, applied to the
 fields `df Y` and `ν` along `f`.
+
+For the inclusion `ι : U → N` of an open subset with the restricted metric, `dι` is the identity
+of `T_y N`, so the immersion geometry of a map `φ : M → U` is that of `ι ∘ φ`: the second
+fundamental form, shape operator, normal connection, principal curvatures and mean curvature
+vector agree (`TauCeti.immersionSecondFundamentalForm_subtypeVal_comp`,
+`TauCeti.immersionShapeOperator_subtypeVal_comp`,
+`TauCeti.immersionNormalConnection_subtypeVal_comp`,
+`TauCeti.immersionSecondFundamentalFormAt_subtypeVal_comp`,
+`TauCeti.immersionShapeOperatorAt_subtypeVal_comp`,
+`TauCeti.immersionPrincipalCurvatures_subtypeVal_comp`,
+`TauCeti.immersionMeanCurvatureVector_subtypeVal_comp`). Restriction of the source to an open
+subset is in `TauCeti.Geometry.Manifold.Riemannian.Immersion.SourceIsometry`.
 
 ## References
 
@@ -270,6 +284,107 @@ theorem immersionMeanCurvatureVector_comp_eq_zero_iff (hΦ : IsLocalRiemannianIs
 end Pointwise
 
 end IsLocalRiemannianIsometry
+
+/-! ### Restriction of the ambient manifold to an open subset -/
+
+section AmbientRestriction
+
+open scoped TauCeti
+
+variable [IsManifold I 2 M] [IsManifold J 2 N]
+  [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
+  {U : TopologicalSpace.Opens N}
+  {cov : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)}
+  {covU : CovariantDerivative J F (fun y : U ↦ TangentSpace J y)}
+  {φ : M → U}
+
+/-- **The second fundamental form is local in the ambient manifold**: for a map `φ` into an open
+subset `U ⊆ N` with the restricted metric, `B_{ι ∘ φ}(X, Y) = B_φ(X, Y)`, where `ι : U → N` is the
+inclusion. -/
+theorem immersionSecondFundamentalForm_subtypeVal_comp (hcov : cov.IsLeviCivitaConnection)
+    (hcovU : covU.IsLeviCivitaConnection) (hφ : ContMDiffAt I J 2 φ x)
+    (X : Π y : M, TangentSpace I y) {Y : Π y : M, TangentSpace I y} (hY : MDiffAt (T% Y) x) :
+    immersionSecondFundamentalForm cov (Subtype.val ∘ φ) X Y x =
+      immersionSecondFundamentalForm covU φ X Y x := by
+  rw [← (IsLocalRiemannianIsometry.subtype_val (I := J) U).mfderiv_immersionSecondFundamentalForm
+    hcovU hcov hφ X hY, mfderiv_subtype_val_apply]
+
+omit [IsManifold I 2 M] in
+/-- **The shape operator is local in the ambient manifold**: for a map `φ` into an open subset
+`U ⊆ N` and a field `ν` along `φ`, `S^{ι ∘ φ}_ν X = S^φ_ν X`. -/
+theorem immersionShapeOperator_subtypeVal_comp (hcov : cov.IsLeviCivitaConnection)
+    (hcovU : covU.IsLeviCivitaConnection) (hφ : MDifferentiableAt I J φ x)
+    {ν : Π y : M, TangentSpace J (φ y)}
+    (hν : MDifferentiableAt I 𝓘(ℝ, F) (sectionCoord ℝ (F := F) φ ν (φ x)) x)
+    (X : Π y : M, TangentSpace I y) :
+    immersionShapeOperator cov (Subtype.val ∘ φ) ν X x = immersionShapeOperator covU φ ν X x := by
+  have h := (IsLocalRiemannianIsometry.subtype_val (I := J) U).mfderiv_immersionShapeOperator
+    hcovU hcov hφ hν X
+  simp only [mfderiv_subtype_val_apply] at h
+  exact h.symm
+
+omit [IsManifold I 2 M] in
+/-- **The normal connection is local in the ambient manifold**: for a map `φ` into an open subset
+`U ⊆ N` and a field `ν` along `φ`, `∇^{⊥, ι ∘ φ}_X ν = ∇^{⊥, φ}_X ν`. -/
+theorem immersionNormalConnection_subtypeVal_comp (hcov : cov.IsLeviCivitaConnection)
+    (hcovU : covU.IsLeviCivitaConnection) (hφ : MDifferentiableAt I J φ x)
+    {ν : Π y : M, TangentSpace J (φ y)}
+    (hν : MDifferentiableAt I 𝓘(ℝ, F) (sectionCoord ℝ (F := F) φ ν (φ x)) x)
+    (X : Π y : M, TangentSpace I y) :
+    immersionNormalConnection cov (Subtype.val ∘ φ) ν X x =
+      immersionNormalConnection covU φ ν X x := by
+  have h := (IsLocalRiemannianIsometry.subtype_val (I := J) U).mfderiv_immersionNormalConnection
+    hcovU hcov hφ hν X
+  simp only [mfderiv_subtype_val_apply] at h
+  exact h.symm
+
+variable [FiniteDimensional ℝ E]
+
+/-- **The pointwise second fundamental form is local in the ambient manifold**:
+`B^{ι ∘ φ}_x(v, w) = B^φ_x(v, w)` for a map `φ` into an open subset `U ⊆ N`. -/
+theorem immersionSecondFundamentalFormAt_subtypeVal_comp (hcov : cov.IsLeviCivitaConnection)
+    (hcovU : covU.IsLeviCivitaConnection) (hφ : ContMDiffAt I J 2 φ x) (v w : TangentSpace I x) :
+    immersionSecondFundamentalFormAt cov (Subtype.val ∘ φ) x v w =
+      immersionSecondFundamentalFormAt covU φ x v w := by
+  rw [← (IsLocalRiemannianIsometry.subtype_val (I := J) U).mfderiv_immersionSecondFundamentalFormAt
+    hcovU hcov hφ v w, mfderiv_subtype_val_apply]
+
+variable [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
+
+/-- **The pointwise shape operator is local in the ambient manifold**: for a map `φ` into an open
+subset `U ⊆ N`, the shape operators of `ι ∘ φ` and `φ` in a normal direction `ν` agree. -/
+theorem immersionShapeOperatorAt_subtypeVal_comp (hcov : cov.IsLeviCivitaConnection)
+    (hcovU : covU.IsLeviCivitaConnection) (hφ : ContMDiffAt I J 2 φ x)
+    (ν : TangentSpace J (φ x)) :
+    immersionShapeOperatorAt (I := I) cov (Subtype.val ∘ φ) x ν =
+      immersionShapeOperatorAt (I := I) covU φ x ν := by
+  have h := (IsLocalRiemannianIsometry.subtype_val (I := J) U).immersionShapeOperatorAt_comp
+    hcovU hcov hφ ν
+  rwa [mfderiv_subtype_val_apply] at h
+
+/-- **The principal curvatures are local in the ambient manifold**: for a map `φ` into an open
+subset `U ⊆ N`, the principal curvatures of `ι ∘ φ` and `φ` in a normal direction `ν` agree. -/
+theorem immersionPrincipalCurvatures_subtypeVal_comp (hcov : cov.IsLeviCivitaConnection)
+    (hcovU : covU.IsLeviCivitaConnection) (hφ : ContMDiffAt I J 2 φ x) {m : ℕ}
+    (hm : finrank ℝ E = m) (ν : TangentSpace J (φ x)) :
+    immersionPrincipalCurvatures I (Subtype.val ∘ φ) x
+        ((cov.isTorsionFree_iff_torsion_eq_zero).2 hcov.torsion) hm ν =
+      immersionPrincipalCurvatures I φ x
+        ((covU.isTorsionFree_iff_torsion_eq_zero).2 hcovU.torsion) hm ν := by
+  have h := (IsLocalRiemannianIsometry.subtype_val (I := J) U).immersionPrincipalCurvatures_comp
+    hcovU hcov hφ hm ν
+  rwa [mfderiv_subtype_val_apply] at h
+
+/-- **The mean curvature vector is local in the ambient manifold**: `H_{ι ∘ φ} = H_φ` for a map
+`φ` into an open subset `U ⊆ N`. In particular `ι ∘ φ` is minimal at `x` exactly when `φ` is. -/
+theorem immersionMeanCurvatureVector_subtypeVal_comp (hcov : cov.IsLeviCivitaConnection)
+    (hcovU : covU.IsLeviCivitaConnection) (hφ : ContMDiffAt I J 2 φ x) :
+    immersionMeanCurvatureVector (I := I) cov (Subtype.val ∘ φ) x =
+      immersionMeanCurvatureVector (I := I) covU φ x := by
+  rw [← (IsLocalRiemannianIsometry.subtype_val (I := J) U).mfderiv_immersionMeanCurvatureVector
+    hcovU hcov hφ, mfderiv_subtype_val_apply]
+
+end AmbientRestriction
 
 end TauCeti
 

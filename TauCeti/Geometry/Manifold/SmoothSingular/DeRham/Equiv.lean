@@ -49,6 +49,8 @@ Taking `U = M` proves the theorem.
 * `TauCeti.bijective_deRhamHom`: the de Rham theorem, that the de Rham homomorphism is bijective
   in every degree.
 * `TauCeti.deRhamEquiv`: the de Rham isomorphism `H^k_dR(M) ≃ₗ[ℝ] Hᵏ(M; ℝ)`.
+* `TauCeti.deRhamCohomology.bijective_integration`: integration is a bijection from de Rham
+  cohomology onto the cohomology of the smooth singular cochains.
 
 ## References
 
@@ -216,5 +218,20 @@ theorem deRhamHom_deRhamEquiv_symm_apply (k : ℕ)
 theorem deRhamEquiv_symm_deRhamHom_apply (k : ℕ) (c : deRhamCohomology I M k) :
     (deRhamEquiv I M k).symm (deRhamHom I M k c) = c :=
   (deRhamEquiv I M k).symm_apply_apply c
+
+/-- **The de Rham theorem for smooth singular cochains**: integration of closed forms induces a
+bijection `deRhamCohomology.integration I M k` from de Rham cohomology onto the cohomology of the
+smooth singular cochains `Hom(C_*^∞(M; ℝ), ℝ)`. It is the de Rham homomorphism followed by the
+smoothing isomorphism `TauCeti.smoothSingularCohomologyIso`. -/
+theorem deRhamCohomology.bijective_integration (k : ℕ) :
+    Function.Bijective (deRhamCohomology.integration I M k) := by
+  have h : ⇑(deRhamCohomology.integration I M k) =
+      (smoothSingularCohomologyIso I M (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ) k).hom ∘
+        deRhamHom I M k := by
+    funext c
+    rw [Function.comp_apply, smoothSingularCohomologyIso_hom,
+      homologyMap_cochainComplexMap_deRhamHom]
+  rw [h]
+  exact (CategoryTheory.ConcreteCategory.bijective_of_isIso _).comp (bijective_deRhamHom I M k)
 
 end TauCeti

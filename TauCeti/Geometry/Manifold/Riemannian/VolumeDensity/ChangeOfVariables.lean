@@ -12,6 +12,8 @@ public import Mathlib.Analysis.InnerProductSpace.NormDet
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Matrix.MeasurableSpace
+import Mathlib.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Polish
 import TauCeti.MeasureTheory.Covering.DisjointCover
@@ -27,7 +29,8 @@ density of the pulled back Riemannian volume with respect to `b.addHaar`, the Ha
 the parallelepiped spanned by `b` measure one. A change of basis multiplies the Jacobian and the
 Haar measure by inverse factors, so the weighted coordinate measure does not depend on `b`. For an
 orthonormal basis of an inner product space the Jacobian is Mathlib's `LinearMap.normDet` of the
-differential.
+differential. The Jacobian is positive where the differential is injective, and for a `C^m`
+metric it is a `C^m` function on an open set where a `C^(m+1)` map has injective differentials.
 
 If `f` is injective and differentiable on a measurable set `s` whose image is measurable and lies
 in a preferred chart, then `∫⁻ y in f '' s, φ y ∂vol = ∫⁻ x in s, J_b f x * φ (f x) ∂b.addHaar`.
@@ -50,6 +53,10 @@ orientation is used, and `M` may have boundary or corners.
 
 ## Main results
 
+* `TauCeti.det_gram_mfderiv_pos`, `TauCeti.riemannianJacobian_pos`: the Gram determinant and the
+  Jacobian are positive where the differential is injective.
+* `TauCeti.contDiffOn_riemannianJacobian`: the Jacobian of a `C^(m+1)` map with injective
+  differentials is `C^m` for a `C^m` metric.
 * `TauCeti.riemannianJacobian_unique`: for a basis consisting of a single vector, the Jacobian is
   the norm of the image of that vector under the differential.
 * `TauCeti.riemannianJacobian_changeBasis`: a change of basis multiplies the Jacobian by the
@@ -136,6 +143,23 @@ theorem riemannianJacobian_eq_sqrt_det_gram (b : Module.Basis ι ℝ F) (f : F �
 theorem riemannianJacobian_nonneg (b : Module.Basis ι ℝ F) (f : F → M) (x : F) :
     0 ≤ riemannianJacobian (I := I) b f x :=
   Real.sqrt_nonneg _
+
+/-- The Gram determinant of the vectors `df_x (b i)` is positive where the differential is
+injective: these vectors are then linearly independent, so their Gram matrix is positive
+definite. -/
+theorem det_gram_mfderiv_pos (b : Module.Basis ι ℝ F) {f : F → M} {x : F}
+    (hf : Function.Injective (mfderiv 𝓘(ℝ, F) I f x)) :
+    0 < (Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, F) I f x (b i))).det :=
+  (Matrix.posDef_gram_of_linearIndependent
+    (b.linearIndependent.map' (mfderiv 𝓘(ℝ, F) I f x).toLinearMap
+      (LinearMap.ker_eq_bot.2 hf))).det_pos
+
+/-- The Riemannian Jacobian is positive where the differential is injective. -/
+theorem riemannianJacobian_pos (b : Module.Basis ι ℝ F) {f : F → M} {x : F}
+    (hf : Function.Injective (mfderiv 𝓘(ℝ, F) I f x)) :
+    0 < riemannianJacobian (I := I) b f x := by
+  rw [riemannianJacobian_eq_sqrt_det_gram]
+  exact Real.sqrt_pos.2 (det_gram_mfderiv_pos b hf)
 
 /-- Relabeling the basis leaves the Riemannian Jacobian unchanged. -/
 @[simp]
@@ -281,6 +305,24 @@ theorem continuousOn_riemannianJacobian (b : Module.Basis ι ℝ F)
   exact Real.continuous_sqrt.comp_continuousOn (continuous_id.matrix_det.comp_continuousOn hgram)
 
 end Continuity
+
+/-- **Smoothness of the Riemannian Jacobian.** For a `C^m` metric, the Riemannian Jacobian of a
+`C^n` map `f`, with `m + 1 ≤ n`, is `C^m` on an open set where the differentials of `f` are
+injective. -/
+theorem contDiffOn_riemannianJacobian {m n : ℕ∞ω}
+    [IsContMDiffRiemannianBundle I m E (fun x : M ↦ TangentSpace I x)]
+    (b : Module.Basis ι ℝ F) {f : F → M} {U : Set F} (hf : ContMDiffOn 𝓘(ℝ, F) I n f U)
+    (hmn : m + 1 ≤ n) (hU : IsOpen U)
+    (hinj : ∀ x ∈ U, Function.Injective (mfderiv 𝓘(ℝ, F) I f x)) :
+    ContDiffOn ℝ m (riemannianJacobian (I := I) b f) U := by
+  have hdet : ContDiffOn ℝ m
+      (fun x ↦ (Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, F) I f x (b i))).det) U :=
+    ContDiffOn.matrix_det fun i j ↦ by
+      simpa only [Matrix.gram_apply] using hf.contDiffOn_inner_mfderiv hmn hU (b i) (b j)
+  rw [show riemannianJacobian (I := I) b f = fun x ↦
+      Real.sqrt (Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, F) I f x (b i))).det from
+    funext (riemannianJacobian_eq_sqrt_det_gram b f)]
+  exact hdet.sqrt fun x hx ↦ (det_gram_mfderiv_pos b (hinj x hx)).ne'
 
 variable [FiniteDimensional ℝ E]
 

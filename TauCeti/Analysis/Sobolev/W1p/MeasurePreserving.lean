@@ -67,6 +67,8 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   domain.
 * `TauCeti.W1p.isCompactOperator_valueL_of_affineIsometryEquiv`: compactness of the value map
   `W^{1,p} → Lᵖ` transfers along an affine isometry.
+* `TauCeti.W1p.eLpNorm_value_le_of_affineIsometryEquiv`: a bound `‖u‖_{Lˢ} ≤ C ‖u‖_{W^{1,p}}`
+  transfers along an affine isometry, with the same constant.
 * `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
   `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
   coordinates.
@@ -532,6 +534,30 @@ theorem W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_m
   rw [W1p.setIntegral_inner_gradient_compAffineIsometryEquivL, hu,
     ← e.measurePreserving.setIntegral_preimage_emb e.toHomeomorph.measurableEmbedding]
   simp [hUV]
+
+/-- **`Lˢ` bounds on the values are invariant under rigid changes of coordinates.** For
+`U = g⁻¹(V)`, if `‖v‖_{Lˢ(V)} ≤ C ‖v‖_{W^{1,p}(V)}` for every `v ∈ W^{1,p}(V)`, then
+`‖u‖_{Lˢ(U)} ≤ C ‖u‖_{W^{1,p}(U)}` for every `u ∈ W^{1,p}(U)`: the value of `u` is the value of
+`u ∘ g⁻¹` composed with `g`, and precomposition with `g⁻¹` does not increase the norm. -/
+theorem W1p.eLpNorm_value_le_of_affineIsometryEquiv (g : F ≃ᵃⁱ[ℝ] F')
+    (hUV : (U : Set F) = g ⁻¹' V) {s : ℝ≥0∞} {C : ℝ≥0∞}
+    (hC : ∀ v : W1p volume V p, eLpNorm (W1p.value v) s (volume.restrict (V : Set F')) ≤ C * ‖v‖ₑ)
+    (u : W1p volume U p) :
+    eLpNorm (W1p.value u) s (volume.restrict (U : Set F)) ≤ C * ‖u‖ₑ := by
+  have hVU : (V : Set F') = g.symm ⁻¹' U :=
+    hUV ▸ (g.toHomeomorph.toEquiv.symm_preimage_preimage V).symm
+  have hmp := g.symm.measurePreserving.restrict_of_preimage_eq U.isOpen.measurableSet hVU
+  calc eLpNorm (W1p.value u) s (volume.restrict (U : Set F))
+      = eLpNorm (W1p.value u ∘ g.symm) s (volume.restrict (V : Set F')) :=
+        (eLpNorm_comp_measurePreserving (Lp.aestronglyMeasurable _) hmp).symm
+    _ = eLpNorm (W1p.value (W1p.compAffineIsometryEquivL g.symm hVU u)) s
+          (volume.restrict (V : Set F')) :=
+        eLpNorm_congr_ae (W1p.value_compAffineIsometryEquivL_ae g.symm hVU u).symm
+    _ ≤ C * ‖W1p.compAffineIsometryEquivL g.symm hVU u‖ₑ := hC _
+    _ ≤ C * ‖u‖ₑ := by
+        gcongr
+        rw [← ofReal_norm, ← ofReal_norm]
+        exact ENNReal.ofReal_le_ofReal (W1p.norm_compAffineIsometryEquivL_le g.symm hVU u)
 
 end AffineIsometry
 

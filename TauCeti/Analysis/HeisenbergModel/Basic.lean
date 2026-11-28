@@ -37,6 +37,8 @@ measures the failure of the Weil operators of `Δ` to multiply
 ## Main definitions
 
 * `TauCeti.HeisenbergDatum W`: a Heisenberg datum on `W`.
+* `TauCeti.HeisenbergDatum.prod`: the product `β₁ ⊠ β₂ ((x₁, x₂), (y₁, y₂)) = β₁ x₁ y₁ * β₂ x₂ y₂`
+  of two Heisenberg data, a Heisenberg datum on `W₁ × W₂`.
 * `TauCeti.HeisenbergDatum.Representation β X`: a representation of `β` on `X`.
 * `TauCeti.HeisenbergDatum.IsVacuum β μ e`: `e` is a vacuum for `β` and `μ`.
 * `TauCeti.HeisenbergDatum.Multiplier β μ G`: a multiplier for an action of `G` that preserves `β`
@@ -156,6 +158,28 @@ theorem map_sub_left : β (x - x') y = β x y * β y x' := by
 theorem conj_apply : conj (β x y) = β y x := by
   rw [← Complex.inv_eq_conj (β.norm_apply x y)]
   exact inv_eq_of_mul_eq_one_right (β.apply_mul_apply_swap x y)
+
+/-- The product `β₁ ⊠ β₂ ((x₁, x₂), (y₁, y₂)) = β₁ x₁ y₁ * β₂ x₂ y₂` of two Heisenberg data, a
+Heisenberg datum on `W₁ × W₂`. -/
+def prod {W₁ W₂ : Type*} [AddCommGroup W₁] [TopologicalSpace W₁] [AddCommGroup W₂]
+    [TopologicalSpace W₂] (β₁ : HeisenbergDatum W₁) (β₂ : HeisenbergDatum W₂) :
+    HeisenbergDatum (W₁ × W₂) where
+  toFun x y := β₁ x.1 y.1 * β₂ x.2 y.2
+  map_add_left' x x' y := by
+    rw [Prod.fst_add, Prod.snd_add, map_add_left, map_add_left]
+    ring
+  map_add_right' x y y' := by
+    rw [Prod.fst_add, Prod.snd_add, map_add_right, map_add_right]
+    ring
+  apply_self' x := by rw [apply_self, apply_self, mul_one]
+  norm_apply' x y := by rw [norm_mul, norm_apply, norm_apply, mul_one]
+  continuous_uncurry' := by fun_prop
+
+@[simp]
+theorem prod_apply {W₁ W₂ : Type*} [AddCommGroup W₁] [TopologicalSpace W₁] [AddCommGroup W₂]
+    [TopologicalSpace W₂] (β₁ : HeisenbergDatum W₁) (β₂ : HeisenbergDatum W₂) (x y : W₁ × W₂) :
+    β₁.prod β₂ x y = β₁ x.1 y.1 * β₂ x.2 y.2 :=
+  (rfl)
 
 /-- A *representation* of a Heisenberg datum `β` on a complex normed space `X`: linear isometries
 `ϱ x`, jointly continuous in `(x, v)`, with `ϱ x (ϱ y v) = β x y • ϱ (x + y) v`. -/
