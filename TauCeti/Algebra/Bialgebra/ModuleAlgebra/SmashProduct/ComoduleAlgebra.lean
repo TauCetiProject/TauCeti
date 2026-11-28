@@ -204,15 +204,8 @@ theorem includeA_retractA_of_mem_coinvariants {x : SmashProduct μ}
     simpa using (Comodule.transportInvHom (R := R) (C := H)
       (linearEquivTensor μ).symm).mem_fixedSubcomodule
         (Comodule.mem_fixedSubcomodule.2 (ComoduleAlgebra.mem_coinvariants.1 hx))
-  have hretract : retractA μ x =
-      TensorProduct.rid R A ((Coalgebra.counit (R := R)).lTensor A (linearEquivTensor μ x)) :=
-    LinearMap.congr_fun (lhom_ext (f := retractA μ)
-      (g := (TensorProduct.rid R A).toLinearMap ∘ₗ
-        (Coalgebra.counit (R := R) (A := H)).lTensor A ∘ₗ
-        (linearEquivTensor μ).toLinearMap)
-      fun a h => by simp) x
   refine (linearEquivTensor μ).injective ?_
-  rw [linearEquivTensor_includeA, hretract]
+  rw [linearEquivTensor_includeA]
   exact (Comodule.mem_fixedSubcomodule_cofree_iff (linearEquivTensor μ x)).1 hmem
 
 /-- The coinvariant subalgebra `(A # H)^{co H}` equals the image `(includeA (μ := μ)).range` of

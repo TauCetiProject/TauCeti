@@ -478,7 +478,7 @@ theorem coe_liftEquiv_symm_apply (f : SmashProduct μ →ₐ[R] C) :
 
 variable (μ) in
 /-- The `R`-linear retraction `A # H →ₗ[R] A` sending `a # h` to `counit h • a`. -/
-noncomputable def retractA : SmashProduct μ →ₗ[R] A :=
+@[expose] noncomputable def retractA : SmashProduct μ →ₗ[R] A :=
   (TensorProduct.rid R A).toLinearMap ∘ₗ
     (counit (R := R) (A := H)).lTensor A ∘ₗ (linearEquivTensor μ).toLinearMap
 

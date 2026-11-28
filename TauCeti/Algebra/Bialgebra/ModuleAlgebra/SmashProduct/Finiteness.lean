@@ -42,8 +42,7 @@ variable {R H A : Type*}
 instance SmashProduct.instModuleFinite (μ : LeftModuleAlgebra R H A)
     [Module.Finite R A] [Module.Finite R H] :
     Module.Finite R (SmashProduct μ) :=
-  Module.Finite.of_surjective (SmashProduct.linearEquivTensor μ).symm.toLinearMap
-    (SmashProduct.linearEquivTensor μ).symm.surjective
+  Module.Finite.equiv (SmashProduct.linearEquivTensor μ).symm
 
 end Finite
 
