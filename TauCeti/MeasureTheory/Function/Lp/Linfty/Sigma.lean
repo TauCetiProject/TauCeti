@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
-public import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteLimit
+public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Finite.Limit
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import Mathlib.MeasureTheory.Function.LpSpace.CompleteOfCompleteLp
 
