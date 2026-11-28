@@ -11,7 +11,7 @@ public import TauCeti.Algebra.Algebra.Unitization.Matrix
 public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
 import TauCeti.Algebra.Ring.Units
-import TauCeti.Algebra.Star.Unitary
+import TauCeti.Algebra.Star.Unitary.Basic
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!

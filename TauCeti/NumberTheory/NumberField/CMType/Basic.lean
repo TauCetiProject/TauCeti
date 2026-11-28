@@ -41,6 +41,8 @@ complex. In particular `ℚ` has no CM type.
 * The action `σΦ = {σ ∘ φ : φ ∈ Φ}` of `Aut(ℂ)` on the CM types of such an `E`.
 * `TauCeti.CMType.embedding Φ w`: for a field `E`, the embedding `Φ_w` of `Φ` inducing the
   infinite place `w`, so that `Φ` amounts to a choice of complex embedding above each place.
+* `TauCeti.CMType.equivInfinitePlace Φ`: the equivalence between the embeddings of `Φ` and all
+  infinite places, with inverse given by `Φ.embedding`.
 
 ## Main results
 
@@ -567,6 +569,30 @@ theorem embedding_eq_iff {w : InfinitePlace E} {φ : E →+* ℂ} :
 @[simp]
 theorem embedding_mk {φ : E →+* ℂ} (hφ : φ ∈ Φ) : Φ.embedding (InfinitePlace.mk φ) = φ :=
   Φ.embedding_eq_iff.2 ⟨hφ, rfl⟩
+
+/-- Passing to the associated infinite place identifies the embeddings of `Φ` with all
+infinite places. The inverse chooses the representative in `Φ`. -/
+noncomputable def equivInfinitePlace : Φ ≃ InfinitePlace E where
+  toFun φ := InfinitePlace.mk φ.val
+  invFun w := ⟨Φ.embedding w, Φ.embedding_mem w⟩
+  left_inv φ := Subtype.ext (Φ.embedding_mk φ.property)
+  right_inv := Φ.mk_embedding
+
+/-- The forward map forgets the choice of representative. -/
+@[simp]
+theorem equivInfinitePlace_apply (φ : Φ) :
+    Φ.equivInfinitePlace φ = InfinitePlace.mk φ.val := (rfl)
+
+/-- The inverse recovers the member of `Φ` that gives the place. -/
+@[simp]
+theorem equivInfinitePlace_symm_mk (φ : Φ) :
+    Φ.equivInfinitePlace.symm (InfinitePlace.mk φ.val) = φ :=
+  Φ.equivInfinitePlace.symm_apply_apply φ
+
+/-- The inverse is the chosen embedding above the place, viewed as a member of `Φ`. -/
+@[simp]
+theorem coe_equivInfinitePlace_symm_apply (w : InfinitePlace E) :
+    (Φ.equivInfinitePlace.symm w).val = Φ.embedding w := (rfl)
 
 /-- The absolute value of `Φ_w x` is `|x|_w`. -/
 @[simp]

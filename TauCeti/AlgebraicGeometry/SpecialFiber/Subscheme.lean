@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
-public import TauCeti.AlgebraicGeometry.Fibers
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
+public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Basic
 
 /-!
 # The special fibre as the zero scheme of the maximal ideal
@@ -32,6 +33,13 @@ multiplicities, and the closed subscheme cut out by the equation `π` is `X_s` i
 `π` a nonzerodivisor, `X_s` is an effective Cartier divisor with trivial ideal sheaf. Comparing
 this effective Cartier divisor with the Weil divisor of `π` is not done here.
 
+This file also constructs the **reduced special fibre** `X_{s,red}` (`TauCeti.reducedSpecialFiber`),
+the reduced induced closed subscheme on `toBase ⁻¹' {closedPoint R}`, together with its
+factorization through `X_s` (`TauCeti.reducedSpecialFiberToSpecialFiber`), the universal
+factorization criterion for morphisms from reduced schemes
+(`TauCeti.existsUnique_comp_reducedSpecialFiberι_iff`), and the closed-subscheme embedding
+`TauCeti.subschemeToReducedSpecialFiber`.
+
 ## Main results
 
 * `TauCeti.ker_specialFiberι`: the ideal sheaf of the special fibre is `𝔪·𝒪_X`;
@@ -49,10 +57,19 @@ this effective Cartier divisor with the Weil divisor of `π` is not done here.
   structure morphism on their intersection (`TauCeti.pullback_fst_subschemeToSpecialFiber`). For
   instance, the irreducible components of the special fibre, with their reduced structures, are
   schemes over the residue field in this way.
+* `TauCeti.reducedSpecialFiber`, `TauCeti.reducedSpecialFiberToSpecialFiber`, and
+  `TauCeti.isIso_reducedSpecialFiberToSpecialFiber_iff`: the reduced special fibre `X_{s,red}`,
+  its closed immersion into `X_s`, and equivalence of `X_{s,red} ≅ X_s` with `IsReduced X_s`.
+* `TauCeti.existsUnique_comp_reducedSpecialFiberι_iff`,
+  `TauCeti.subschemeToReducedSpecialFiber`,
+  `AlgebraicGeometry.Scheme.Hom.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton`, and
+  `AlgebraicGeometry.Scheme.Hom.subschemeClosureToReducedSpecialFiber`: universal property of
+  `X_{s,red}` for morphisms from reduced schemes, closed subschemes whose ideal sheaf contains
+  `(reducedSpecialFiberι R toBase).ker`, and reduced closures of points of the special fibre.
 
 ## References
 
-* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C9U), the special fibre
+* [The Stacks Project, Section 55.9](https://stacks.math.columbia.edu/tag/0C5Y), the special fibre
   of a regular model as the divisor of a uniformizer.
 -/
 
@@ -230,4 +247,256 @@ lemma isProper_subschemeOverResidueField [IsProper toBase] {I : X.IdealSheafData
 
 end ResidueField
 
+section ReducedSpecialFiber
+
+variable (R : Type u) [CommRing R] [IsLocalRing R] {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+
+/-- The **reduced special fibre** `X_{s,red}` of a scheme `X` over a local ring `R`: the reduced
+induced closed subscheme on the preimage of the closed point of `Spec R`, realized as the closed
+subscheme cut out by `(specialFiberι R toBase).ker.radical`. -/
+noncomputable def reducedSpecialFiber : Scheme.{u} :=
+  (specialFiberι R toBase).ker.radical.subscheme
+
+/-- The reduced special fibre `X_{s,red}` is a reduced scheme. -/
+instance isReduced_reducedSpecialFiber : IsReduced (reducedSpecialFiber R toBase) := by
+  rw [reducedSpecialFiber, ← Scheme.IdealSheafData.vanishingIdeal_support]
+  infer_instance
+
+/-- The canonical closed immersion `X_{s,red} ⟶ X` of the reduced special fibre into the total
+space. -/
+noncomputable def reducedSpecialFiberι : reducedSpecialFiber R toBase ⟶ X :=
+  (specialFiberι R toBase).ker.radical.subschemeι
+
+/-- The canonical inclusion `X_{s,red} ⟶ X` is a closed immersion. -/
+instance isClosedImmersion_reducedSpecialFiberι :
+    IsClosedImmersion (reducedSpecialFiberι R toBase) :=
+  inferInstanceAs (IsClosedImmersion (specialFiberι R toBase).ker.radical.subschemeι)
+
+/-- As a set, the image of the reduced special fibre in `X` is the preimage of the closed point. -/
+@[simp]
+theorem range_reducedSpecialFiberι :
+    Set.range (reducedSpecialFiberι R toBase) = toBase ⁻¹' {closedPoint R} := by
+  have := isClosedImmersion_specialFiberι R toBase
+  refine (Scheme.IdealSheafData.range_subschemeι (specialFiberι R toBase).ker.radical).trans ?_
+  rw [Scheme.IdealSheafData.support_radical, Scheme.Hom.support_ker, range_specialFiberι R toBase,
+    IsClosed.closure_eq]
+  exact (isClosed_singleton_closedPoint R).preimage toBase.continuous
+
+/-- The ideal sheaf of the reduced special fibre equals `(specialFiberι R toBase).ker.radical`. -/
+lemma ker_reducedSpecialFiberι_eq_radical :
+    (reducedSpecialFiberι R toBase).ker = (specialFiberι R toBase).ker.radical := by
+  unfold reducedSpecialFiberι
+  exact Scheme.IdealSheafData.ker_subschemeι (specialFiberι R toBase).ker.radical
+
+/-- The ideal sheaf of the reduced special fibre is `(specialFiberι R toBase).ker.radical`, which
+equals the vanishing ideal of the preimage of the closed point. -/
+theorem ker_reducedSpecialFiberι :
+    (reducedSpecialFiberι R toBase).ker =
+      Scheme.IdealSheafData.vanishingIdeal
+        ⟨toBase ⁻¹' {closedPoint R},
+          (isClosed_singleton_closedPoint R).preimage toBase.continuous⟩ := by
+  rw [ker_reducedSpecialFiberι_eq_radical, ← Scheme.IdealSheafData.vanishingIdeal_support]
+  congr 1; ext1
+  rw [← Scheme.IdealSheafData.support_radical, ← Scheme.IdealSheafData.range_subschemeι]
+  exact range_reducedSpecialFiberι R toBase
+
+variable {R toBase} in
+/-- A closed subset of `X` lies in the special fibre if and only if its vanishing ideal contains
+the ideal sheaf of the reduced special fibre. -/
+theorem ker_reducedSpecialFiberι_le_vanishingIdeal_iff {Z : TopologicalSpace.Closeds X} :
+    (reducedSpecialFiberι R toBase).ker ≤ Scheme.IdealSheafData.vanishingIdeal Z ↔
+      (Z : Set X) ⊆ toBase ⁻¹' {closedPoint R} := by
+  rw [ker_reducedSpecialFiberι, ← Scheme.IdealSheafData.le_support_iff_le_vanishingIdeal,
+    ← SetLike.coe_subset_coe, Scheme.IdealSheafData.coe_support_vanishingIdeal]
+  -- Unfolds `(⟨toBase ⁻¹' {closedPoint R}, _⟩ : Set X)` (`Closeds.coe_mk`) and
+  -- `↥(Spec (.of R)) ≡ PrimeSpectrum R`.
+  rfl
+
+variable {R} in
+/-- The closure of a point of the special fibre, with its reduced structure, is a closed subscheme
+of the reduced special fibre `X_{s,red}`. -/
+theorem
+  _root_.AlgebraicGeometry.Scheme.Hom.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton
+    {x : X} (hx : toBase x = closedPoint R) :
+    (reducedSpecialFiberι R toBase).ker ≤
+      Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩ :=
+  ker_reducedSpecialFiberι_le_vanishingIdeal_iff.mpr <|
+    closure_minimal (Set.singleton_subset_iff.mpr hx)
+      ((isClosed_singleton_closedPoint R).preimage toBase.continuous)
+
+/-- The ideal sheaf of the scheme-theoretic special fibre is contained in that of the reduced
+special fibre. -/
+theorem ker_specialFiberι_le_ker_reducedSpecialFiberι :
+    (specialFiberι R toBase).ker ≤ (reducedSpecialFiberι R toBase).ker :=
+  (specialFiberι R toBase).ker.le_radical.trans_eq
+    (ker_reducedSpecialFiberι_eq_radical R toBase).symm
+
+/-- A morphism `f : Y ⟶ X` from a reduced scheme factors uniquely through
+`reducedSpecialFiberι R toBase` if and only if its set-theoretic image lies over the closed point
+of `Spec R`. -/
+theorem existsUnique_comp_reducedSpecialFiberι_iff {Y : Scheme.{u}} [IsReduced Y] (f : Y ⟶ X) :
+    (∃! g : Y ⟶ reducedSpecialFiber R toBase, g ≫ reducedSpecialFiberι R toBase = f) ↔
+      Set.range f ⊆ toBase ⁻¹' {closedPoint R} := by
+  have hI : (specialFiberι R toBase).ker.radical = Scheme.IdealSheafData.vanishingIdeal
+      ⟨toBase ⁻¹' {closedPoint R}, (isClosed_singleton_closedPoint R).preimage toBase.continuous⟩ :=
+    (ker_reducedSpecialFiberι_eq_radical R toBase).symm.trans (ker_reducedSpecialFiberι R toBase)
+  unfold reducedSpecialFiber reducedSpecialFiberι
+  rw [hI]
+  exact Scheme.IdealSheafData.existsUnique_comp_subschemeι_vanishingIdeal_iff f _
+
+/-- The canonical closed immersion `X_{s,red} ⟶ X_s` of the reduced special fibre into the
+scheme-theoretic special fibre. -/
+noncomputable def reducedSpecialFiberToSpecialFiber :
+    reducedSpecialFiber R toBase ⟶ (specialFiber R toBase).left :=
+  subschemeToSpecialFiber (specialFiberι R toBase).ker.le_radical
+
+/-- The inclusion of the reduced special fibre into the total space factors through the
+scheme-theoretic special fibre. -/
+@[reassoc (attr := simp)]
+lemma reducedSpecialFiberToSpecialFiber_specialFiberι :
+    reducedSpecialFiberToSpecialFiber R toBase ≫ specialFiberι R toBase =
+      reducedSpecialFiberι R toBase :=
+  subschemeToSpecialFiber_specialFiberι _
+
+/-- The canonical morphism `X_{s,red} ⟶ X_s` is a closed immersion. -/
+instance isClosedImmersion_reducedSpecialFiberToSpecialFiber :
+    IsClosedImmersion (reducedSpecialFiberToSpecialFiber R toBase) :=
+  isClosedImmersion_subschemeToSpecialFiber _
+
+/-- The reduced special fibre is a scheme over the residue field of `R`, through the special
+fibre. -/
+noncomputable instance reducedSpecialFiberOverResidueField :
+    (reducedSpecialFiber R toBase).Over (Spec (.of (ResidueField R))) :=
+  ⟨reducedSpecialFiberToSpecialFiber R toBase ≫ (specialFiber R toBase).hom⟩
+
+/-- The structure morphism of `X_{s,red}` over the residue field factors through `X_{s,red} ⟶ X_s`.
+-/
+lemma reducedSpecialFiber_over :
+    reducedSpecialFiber R toBase ↘ Spec (.of (ResidueField R)) =
+      reducedSpecialFiberToSpecialFiber R toBase ≫ (specialFiber R toBase).hom :=
+  rfl
+
+/-- When `X` is proper over `Spec R`, its reduced special fibre is proper over the residue field. -/
+instance isProper_reducedSpecialFiber [IsProper toBase] :
+    IsProper (reducedSpecialFiber R toBase ↘ Spec (.of (ResidueField R))) := by
+  rw [reducedSpecialFiber_over]
+  exact isProper_subschemeOverResidueField (specialFiberι R toBase).ker.le_radical
+
+/-- The canonical closed immersion `X_{s,red} ⟶ X_s` is surjective. -/
+instance surjective_reducedSpecialFiberToSpecialFiber :
+    Surjective (reducedSpecialFiberToSpecialFiber R toBase) := ⟨fun y ↦ by
+  have hy : specialFiberι R toBase y ∈ Set.range (reducedSpecialFiberι R toBase) := by
+    rw [range_reducedSpecialFiberι, ← range_specialFiberι R toBase]
+    exact ⟨y, rfl⟩
+  obtain ⟨x, hx⟩ := hy
+  have := isClosedImmersion_specialFiberι R toBase
+  refine ⟨x, (specialFiberι R toBase).isClosedEmbedding.injective ?_⟩
+  rw [← Scheme.Hom.comp_apply, reducedSpecialFiberToSpecialFiber_specialFiberι, hx]⟩
+
+/-- The canonical closed immersion `X_{s,red} ⟶ X_s` is an isomorphism if and only if the
+scheme-theoretic special fibre `X_s` is reduced. -/
+theorem isIso_reducedSpecialFiberToSpecialFiber_iff :
+    IsIso (reducedSpecialFiberToSpecialFiber R toBase) ↔
+      IsReduced (specialFiber R toBase).left :=
+  ⟨fun _ ↦ (ObjectProperty.prop_iff_of_iso (IsReduced ·)
+      (asIso (reducedSpecialFiberToSpecialFiber R toBase))).mp inferInstance,
+    fun _ ↦ isIso_of_isClosedImmersion_of_surjective
+      (reducedSpecialFiberToSpecialFiber R toBase)⟩
+
+/-- When the scheme-theoretic special fibre `X_s` is reduced, `X_{s,red} ⟶ X_s` is an isomorphism.
+-/
+instance isIso_reducedSpecialFiberToSpecialFiber [IsReduced (specialFiber R toBase).left] :
+    IsIso (reducedSpecialFiberToSpecialFiber R toBase) :=
+  (isIso_reducedSpecialFiberToSpecialFiber_iff R toBase).mpr inferInstance
+
+section Subscheme
+
+variable {R toBase}
+
+/-- A closed subscheme of `X` whose ideal sheaf contains `(reducedSpecialFiberι R toBase).ker`
+embeds as a closed subscheme of the reduced special fibre `X_{s,red}`. -/
+noncomputable def subschemeToReducedSpecialFiber {I : X.IdealSheafData}
+    (hI : (reducedSpecialFiberι R toBase).ker ≤ I) :
+    I.subscheme ⟶ reducedSpecialFiber R toBase :=
+  Scheme.IdealSheafData.inclusion
+    ((ker_reducedSpecialFiberι_eq_radical R toBase).symm.trans_le hI)
+
+/-- The inclusion of a closed subscheme whose ideal sheaf contains
+`(reducedSpecialFiberι R toBase).ker` factors through `X_{s,red}`. -/
+@[reassoc (attr := simp)]
+lemma subschemeToReducedSpecialFiber_reducedSpecialFiberι {I : X.IdealSheafData}
+    (hI : (reducedSpecialFiberι R toBase).ker ≤ I) :
+    subschemeToReducedSpecialFiber hI ≫ reducedSpecialFiberι R toBase = I.subschemeι :=
+  Scheme.IdealSheafData.inclusion_subschemeι _
+
+/-- A closed subscheme of `X` whose ideal sheaf contains `(reducedSpecialFiberι R toBase).ker`
+is a closed subscheme of `X_{s,red}`. -/
+instance isClosedImmersion_subschemeToReducedSpecialFiber {I : X.IdealSheafData}
+    (hI : (reducedSpecialFiberι R toBase).ker ≤ I) :
+    IsClosedImmersion (subschemeToReducedSpecialFiber hI) :=
+  inferInstanceAs (IsClosedImmersion (Scheme.IdealSheafData.inclusion _))
+
+/-- Composing the inclusion into `X_{s,red}` with `X_{s,red} ⟶ X_s` recovers the inclusion into
+`X_s`. -/
+@[reassoc (attr := simp)]
+lemma subschemeToReducedSpecialFiber_reducedSpecialFiberToSpecialFiber {I : X.IdealSheafData}
+    (hI : (reducedSpecialFiberι R toBase).ker ≤ I) :
+    subschemeToReducedSpecialFiber hI ≫ reducedSpecialFiberToSpecialFiber R toBase =
+      subschemeToSpecialFiber
+        ((ker_specialFiberι_le_ker_reducedSpecialFiberι R toBase).trans hI) := by
+  have := isClosedImmersion_specialFiberι R toBase
+  rw [← cancel_mono (specialFiberι R toBase), Category.assoc,
+    reducedSpecialFiberToSpecialFiber_specialFiberι,
+    subschemeToReducedSpecialFiber_reducedSpecialFiberι, subschemeToSpecialFiber_specialFiberι]
+
+end Subscheme
+
+end ReducedSpecialFiber
+
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti
+
+universe u
+
+variable {R : Type u} [CommRing R] [IsLocalRing R] {X : Scheme.{u}} {toBase : X ⟶ Spec (.of R)}
+
+/-- The closed immersion of the reduced closure of a point of the special fibre into the reduced
+special fibre `X_{s,red}`. -/
+noncomputable def subschemeClosureToReducedSpecialFiber (toBase : X ⟶ Spec (.of R))
+    {x : X} (hx : toBase x = closedPoint R) :
+    (Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subscheme ⟶
+      reducedSpecialFiber R toBase :=
+  subschemeToReducedSpecialFiber
+    (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton hx)
+
+/-- The inclusion of a reduced special-fibre component closure into `X_{s,red}` factors
+`subschemeι` through `reducedSpecialFiberι`. -/
+@[reassoc (attr := simp)]
+lemma subschemeClosureToReducedSpecialFiber_reducedSpecialFiberι
+    {x : X} (hx : toBase x = closedPoint R) :
+    toBase.subschemeClosureToReducedSpecialFiber hx ≫ reducedSpecialFiberι R toBase =
+      (Scheme.IdealSheafData.vanishingIdeal ⟨closure {x}, isClosed_closure⟩).subschemeι :=
+  subschemeToReducedSpecialFiber_reducedSpecialFiberι _
+
+/-- The inclusion of a reduced special-fibre component closure into `X_{s,red}` is a closed
+immersion. -/
+instance isClosedImmersion_subschemeClosureToReducedSpecialFiber
+    {x : X} (hx : toBase x = closedPoint R) :
+    IsClosedImmersion (toBase.subschemeClosureToReducedSpecialFiber hx) :=
+  isClosedImmersion_subschemeToReducedSpecialFiber _
+
+/-- Composing `subschemeClosureToReducedSpecialFiber` with `X_{s,red} ⟶ X_s` gives the component's
+inclusion into `X_s`. -/
+@[reassoc (attr := simp)]
+lemma subschemeClosureToReducedSpecialFiber_reducedSpecialFiberToSpecialFiber
+    {x : X} (hx : toBase x = closedPoint R) :
+    toBase.subschemeClosureToReducedSpecialFiber hx ≫ reducedSpecialFiberToSpecialFiber R toBase =
+      subschemeToSpecialFiber
+        ((ker_specialFiberι_le_ker_reducedSpecialFiberι R toBase).trans
+          (toBase.ker_reducedSpecialFiberι_le_vanishingIdeal_closure_singleton hx)) :=
+  subschemeToReducedSpecialFiber_reducedSpecialFiberToSpecialFiber _
+
+end AlgebraicGeometry.Scheme.Hom

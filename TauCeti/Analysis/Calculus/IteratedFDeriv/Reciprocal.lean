@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
-public import Mathlib.Analysis.Calculus.Deriv.ZPow
+import Mathlib.Analysis.Calculus.Deriv.ZPow
+import Mathlib.Data.Nat.Factorial.BigOperators
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import Mathlib.Analysis.RCLike.Basic
 
@@ -62,6 +63,28 @@ theorem iteratedDeriv_const_div (k : ℕ) (c x : 𝕜) :
   simp_rw [div_eq_mul_inv c, iteratedDeriv_const_mul_field, iteratedDeriv_eq_iterate,
     iter_deriv_inv]
   rw [show (-1 - k : ℤ) = -((k + 1 : ℕ) : ℤ) by push_cast; ring, zpow_neg, zpow_natCast]
+  ring
+
+/-- The `k`-th derivative of `x ↦ c / x ^ m` is
+`(-1)^k (m.ascFactorial k) c / x ^ (m + k)`. At `x = 0` with `m + k > 0` both sides
+vanish, with the conventions `0⁻¹ = 0` and `c / 0 = 0`. -/
+theorem iteratedDeriv_const_div_pow (k m : ℕ) (c x : 𝕜) :
+    iteratedDeriv k (fun y ↦ c / y ^ m) x =
+      (-1) ^ k * ((m.ascFactorial k : ℕ) : 𝕜) * c / x ^ (m + k) := by
+  have heq : (fun y : 𝕜 ↦ c / y ^ m) = fun y ↦ c * y ^ (-(m : ℤ)) := by
+    ext y
+    rw [zpow_neg, zpow_natCast, div_eq_mul_inv]
+  rw [heq, iteratedDeriv_const_mul_field, iteratedDeriv_eq_iterate, iter_deriv_zpow]
+  have hprod : ∏ i ∈ Finset.range k, ((-(m : ℤ) : 𝕜) - i) =
+      (-1) ^ k * ((m.ascFactorial k : ℕ) : 𝕜) := by
+    have hneg : ∏ i ∈ Finset.range k, ((-(m : ℤ) : 𝕜) - i) =
+        ∏ i ∈ Finset.range k, ((-1 : 𝕜) * ((m + i : ℕ) : 𝕜)) :=
+      Finset.prod_congr rfl fun i _ ↦ by push_cast; ring
+    rw [hneg, Finset.prod_mul_distrib, Finset.prod_const, Finset.card_range,
+      Nat.ascFactorial_eq_prod_range, Nat.cast_prod]
+  simp only [Int.cast_neg, Int.cast_natCast] at hprod ⊢
+  have hexp : -(m : ℤ) - k = -((m + k : ℕ) : ℤ) := by omega
+  rw [hprod, hexp, zpow_neg, zpow_natCast]
   ring
 
 /-- The `k`-th derivative of `x ↦ c / x` at a fixed point `x` is linear in `c`. -/
