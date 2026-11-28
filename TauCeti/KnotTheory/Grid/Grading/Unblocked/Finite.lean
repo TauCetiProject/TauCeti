@@ -71,7 +71,7 @@ private theorem baseChange_unblockedDifferential_comm_supported
       (G.unblockedDifferentialSupported R deg S).comp
         (baseChangeSupportedEquiv F R deg S).toLinearMap := by
   refine ((monomialDegreeSupportedBasis F deg S).baseChange R).ext fun i ↦ ?_
-  simp [unblockedDifferentialSupported, G.val.mapRange_map_unblockedDifferential]
+  simp [unblockedDifferentialSupported]
 
 private theorem finite_ker_unblockedDifferential_monomialDegreeSupported
     (R : Type*) [CommRing R] [CharP R 2]
@@ -107,8 +107,9 @@ theorem finite_ker_unblockedDifferential_bigradedChainMinusPiece (R : Type*) [Co
         (G.bigradedChainMinusPiece R g).subtype)) := by
   have hpiece : G.bigradedChainMinusPiece R g =
       GridChainMinus.monomialDegreeSupported R G.monomialBidegree {g} := by
+    rw [monomialDegreeSupported_singleton]
     ext c
-    simp only [mem_bigradedChainMinusPiece, mem_monomialDegreeSupported, Set.mem_singleton_iff]
+    simp only [mem_bigradedChainMinusPiece, mem_monomialDegreePiece]
   rw [hpiece]
   exact G.finite_ker_unblockedDifferential_monomialDegreeSupported R G.monomialBidegree {g} <|
     (G.finite_state_exponent_of_alexander_eq g.snd).subset
@@ -124,8 +125,9 @@ theorem finite_ker_unblockedDifferential_alexanderChainMinusPiece (R : Type*) [C
         (G.alexanderChainMinusPiece R a).subtype)) := by
   have hpiece : G.alexanderChainMinusPiece R a =
       GridChainMinus.monomialDegreeSupported R (fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)) {a} := by
+    rw [monomialDegreeSupported_singleton]
     ext c
-    simp only [mem_alexanderChainMinusPiece, mem_monomialDegreeSupported, Set.mem_singleton_iff]
+    simp only [mem_alexanderChainMinusPiece, mem_monomialDegreePiece]
   rw [hpiece]
   exact G.finite_ker_unblockedDifferential_monomialDegreeSupported R
     (fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)) {a} <|

@@ -110,14 +110,6 @@ instance finite_bigradedUnblockedHomologyGrading_piece (g : ℤ × ℤ) :
   rw [bigradedUnblockedHomologyGrading_piece]
   exact hG.toOddComponentGridDiagram.finite_bigradedUnblockedHomologyPiece R g
 
-/-- The degree-`g` piece of a knot grid's bigrading agrees with `bigradedUnblockedHomologyPiece`
-computed with any odd-component witness on the same underlying diagram. -/
-theorem bigradedUnblockedHomologyGrading_piece_eq_mk
-    (hodd : Odd G.componentCount) (g : ℤ × ℤ) :
-    (hG.bigradedUnblockedHomologyGrading R).piece g =
-      OddComponentGridDiagram.bigradedUnblockedHomologyPiece ⟨G, hodd⟩ R g := by
-  rw [bigradedUnblockedHomologyGrading_piece]
-
 /-- Coarsening a knot grid's `(O-Maslov, Alexander)` bigrading along `Prod.snd` recovers its
 Alexander grading. -/
 @[simp]

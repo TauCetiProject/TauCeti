@@ -118,8 +118,8 @@ theorem isHomogeneous_unblockedHomologyCommutationLinearMap_bigraded (C : Column
   let _ := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule K
   refine LinearMap.isHomogeneous_def.mpr fun g y hy ↦ ?_
   rw [hG.bigradedUnblockedHomologyGrading_piece] at hy
-  rw [(hG.swapColumns C.column (finRotate n C.column)).bigradedUnblockedHomologyGrading_piece_eq_mk
-    K _ (g + G.commutationBidegree C), unblockedHomologyCommutationLinearMap_apply]
+  rw [(hG.swapColumns C.column (finRotate n C.column)).bigradedUnblockedHomologyGrading_piece
+    K (g + G.commutationBidegree C), unblockedHomologyCommutationLinearMap_apply]
   exact unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add _ K C hy
 
 end GridDiagram.IsKnot

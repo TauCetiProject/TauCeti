@@ -171,6 +171,13 @@ The variables move the degree, so this is a submodule over the coefficient ring 
 noncomputable def monomialDegreePiece (a : ι) : Submodule R (GridChainMinus R n) :=
   monomialDegreeSupported R deg {a}
 
+variable (R deg) in
+/-- Supporting on a singleton degree set `{a}` gives the homogeneous piece. -/
+@[simp]
+theorem monomialDegreeSupported_singleton (a : ι) :
+    monomialDegreeSupported R deg {a} = monomialDegreePiece R deg a := by
+  rw [monomialDegreePiece]
+
 /-- The degree-`a` piece is the `R`-span of the monomial basis elements of degree `a`. -/
 theorem monomialDegreePiece_eq_span (R : Type*) [CommSemiring R]
     (deg : GridState n → (Fin n →₀ ℕ) → ι) (a : ι) :

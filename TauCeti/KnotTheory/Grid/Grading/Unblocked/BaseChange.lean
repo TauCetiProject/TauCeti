@@ -164,7 +164,7 @@ theorem baseChangeChainEquiv_comp_baseChange_unblockedDifferential {n : ℕ} (G 
       ((G.unblockedDifferential R).restrictScalars R).comp
         (GridChainMinus.baseChangeChainEquiv n F R).toLinearMap := by
   refine ((GridChainMinus.monomialChainBasis (n := n) F).baseChange R).ext fun i ↦ ?_
-  simp [G.mapRange_map_unblockedDifferential]
+  simp
 
 end GridDiagram
 

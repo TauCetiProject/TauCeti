@@ -950,6 +950,7 @@ theorem unblockedDifferential_apply_apply (c : GridChainMinus R n) (y : GridStat
   simp [Finsupp.sum_apply]
 
 /-- Mapping coefficients along a ring homomorphism intertwines the unblocked differentials. -/
+@[simp]
 theorem mapRange_map_unblockedDifferential {F R : Type*} [CommSemiring F] [CommSemiring R]
     (φ : F →+* R) (c : GridChainMinus F n) :
     (G.unblockedDifferential F c).mapRange (MvPolynomial.map φ) (map_zero _) =

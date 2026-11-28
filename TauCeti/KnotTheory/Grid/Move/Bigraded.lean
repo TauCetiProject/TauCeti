@@ -93,7 +93,7 @@ private theorem bigradedUnblockedHomologyPieceFinrank_unknot_eq_twoByTwo
       Module.finrank K (OddComponentGridDiagram.twoByTwo.bigradedUnblockedHomologyPiece K g) := by
   rw [isKnot_unknot.bigradedUnblockedHomologyPieceFinrank_eq_of_toGridLink_eq K
     GridDiagram.isKnot_twoByTwo GridDiagram.toGridLink_twoByTwo g,
-    GridDiagram.isKnot_twoByTwo.bigradedUnblockedHomologyGrading_piece_eq_mk K _ g]
+    GridDiagram.isKnot_twoByTwo.bigradedUnblockedHomologyGrading_piece K g]
 
 section CommRing
 
