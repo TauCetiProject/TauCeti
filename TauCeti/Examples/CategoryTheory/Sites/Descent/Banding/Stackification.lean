@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Sites.Descent.Banding.Stackification
-import TauCeti.CategoryTheory.Sites.Descent.RelativeGerbe
 
 /-!
 # Checks for descent of abelian bandings
@@ -30,10 +29,9 @@ variable {C : Type (u + 1)} [Category.{u} C] {J : GrothendieckTopology C}
   {A : Sheaf J AddCommGrpCat.{u}}
   {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{u, u + 1}}
 
-local instance : (StrongTrans.id F).IsLocallyEssSurj J :=
-  StrongTrans.isLocallyEssSurj_of_essSurj _ fun _ ↦ by
-    dsimp [StrongTrans.id]
-    infer_instance
+local instance : (StrongTrans.id F).IsLocallyEssSurj J where
+  exists_covering_lift y :=
+    ⟨⊤, J.top_mem _, fun _ f _ ↦ ⟨(F.map f.op.toLoc).toFunctor.obj y, ⟨Iso.refl _⟩⟩⟩
 
 example [F.IsPrestack J] (b : F.AbelianBanding J A) :
     b.descend (StrongTrans.id F) (fun _ ↦ .id _) = b := by
@@ -54,6 +52,6 @@ example (b : F.AbelianBanding J A) (U : C) (x : F.obj (.mk (op U)))
         (((Stack.toStackification.{u, u, u + 1} J F).app (.mk (op U))).toFunctor.obj x) a =
       ((Stack.toStackification.{u, u, u + 1} J F).app (.mk (op U))).toFunctor.mapAut x
         (b.mulEquiv U x a) :=
-  b.stackification_mulEquiv_image U x a
+  b.stackification_mulEquiv_obj U x a
 
 end TauCeti.Examples.BandingStackification
