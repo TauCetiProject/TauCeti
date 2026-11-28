@@ -5,27 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Function
-public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.Convex.Deriv
 import Mathlib.Analysis.Real.Pi.Bounds
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Convex.Integral
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
 
 /-!
-# Cosecant sums and convexity of the cosecant
+# Cosecant sums
 
-The function `x ↦ (sin x)⁻¹` is continuous and convex on `(0, π)`, with positive second derivative
-`(1 + cos x ^ 2) / sin x ^ 3` and antiderivative `log (tan (x / 2))`. By midpoint Jensen's
-inequality, the cosecant sum `∑_{b=1}^{q-1} (sin (π b / q))⁻¹` (`q ≥ 1`) satisfies Pomerance's
-explicit bound
+Using the continuity, convexity, and antiderivative of `x ↦ (sin x)⁻¹` on `(0, π)`
+(`TauCeti.continuousOn_inv_sin_Ioo`, `TauCeti.convexOn_inv_sin_Ioo`, `TauCeti.integral_inv_sin`),
+together with midpoint Jensen's inequality (`ConvexOn.sub_mul_le_intervalIntegral`), the cosecant
+sum `∑_{b=1}^{q-1} (sin (π b / q))⁻¹` (`q ≥ 1`) satisfies Pomerance's explicit bound
 
   `∑_{b=1}^{q-1} (sin (π b / q))⁻¹ < (2 * q / π) * (log q + log (4 / π) + π ^ 2 / (12 * q ^ 2))`.
 
@@ -37,12 +34,11 @@ terms by integrating `(sin x)⁻¹` over `[3π / (2q), π - 3π / (2q)]` gives
 
 ## Main statements
 
-* `TauCeti.convexOn_inv_sin_Ioo`: `fun x ↦ (Real.sin x)⁻¹` is convex on `(0, π)`.
-* `TauCeti.integral_inv_sin`: `∫ x in a..b, (Real.sin x)⁻¹ = log (tan (b / 2)) - log (tan (a / 2))`
-  for `a, b ∈ (0, π)`.
 * `TauCeti.sum_Ico_inv_sin_pi_mul_div_lt`: Pomerance's cosecant sum bound for `1 ≤ q`.
 * `TauCeti.two_div_pi_mul_log_add_le_log`: for real `x ≥ 3`,
   `(2 / π) * (log x + log (4 / π) + π ^ 2 / (12 * x ^ 2)) ≤ log x`.
+* `TauCeti.sum_Ico_inv_sin_pi_mul_div_lt_mul_log`: for integer `q ≥ 2`,
+  `∑_{b=1}^{q-1} (sin (π b / q))⁻¹ < q * log q`.
 
 ## References
 
@@ -56,99 +52,12 @@ open Real Finset
 
 namespace TauCeti
 
-/-! ### Convexity and integral of `1 / sin` on `(0, π)` -/
-
-/-- The function `x ↦ (sin x)⁻¹` is continuous on `(0, π)`. -/
-theorem continuousOn_inv_sin_Ioo : ContinuousOn (fun x : ℝ ↦ (sin x)⁻¹) (Set.Ioo 0 π) :=
-  continuousOn_sin.inv₀ fun _ hx ↦ (sin_pos_of_pos_of_lt_pi hx.1 hx.2).ne'
-
-/-- The function `x ↦ (sin x)⁻¹` is convex on `(0, π)`, since its second derivative
-`(1 + cos x ^ 2) / sin x ^ 3` is positive there. -/
-theorem convexOn_inv_sin_Ioo : ConvexOn ℝ (Set.Ioo 0 π) (fun x : ℝ ↦ (sin x)⁻¹) := by
-  let f' : ℝ → ℝ := fun x ↦ -cos x / sin x ^ 2
-  let f'' : ℝ → ℝ := fun x ↦ (sin x ^ 2 + 2 * cos x ^ 2) / sin x ^ 3
-  refine convexOn_of_hasDerivWithinAt2_nonneg (convex_Ioo 0 π) continuousOn_inv_sin_Ioo
-    (f' := f') (f'' := f'') ?_ ?_ ?_
-  · intro x hx
-    rw [interior_Ioo] at hx
-    have hs : sin x ≠ 0 := (sin_pos_of_pos_of_lt_pi hx.1 hx.2).ne'
-    exact ((Real.hasDerivAt_sin x).inv hs).hasDerivWithinAt
-  · intro x hx
-    rw [interior_Ioo] at hx
-    have hs : sin x ≠ 0 := (sin_pos_of_pos_of_lt_pi hx.1 hx.2).ne'
-    have hs2 : sin x ^ 2 ≠ 0 := pow_ne_zero 2 hs
-    have hnum : HasDerivAt (fun t : ℝ ↦ -cos t) (sin x) x := by
-      convert (Real.hasDerivAt_cos x).neg using 1
-      ring
-    have hden : HasDerivAt (fun t : ℝ ↦ sin t ^ 2) (2 * sin x * cos x) x := by
-      convert (Real.hasDerivAt_sin x).pow 2 using 1
-      ring
-    have hd : HasDerivAt f' (f'' x) x := by
-      convert hnum.div hden hs2 using 1
-      dsimp only [f'']
-      field_simp [hs]
-      ring
-    exact hd.hasDerivWithinAt
-  · intro x hx
-    rw [interior_Ioo] at hx
-    have hs : 0 < sin x := sin_pos_of_pos_of_lt_pi hx.1 hx.2
-    dsimp only [f'']
-    positivity
-
-/-- The antiderivative of `(sin x)⁻¹` on `(0, π)` is `log (tan (x / 2))`. -/
-theorem hasDerivAt_log_tan_div_two {x : ℝ} (hx₀ : 0 < x) (hxπ : x < π) :
-    HasDerivAt (fun t : ℝ ↦ log (tan (t / 2))) (sin x)⁻¹ x := by
-  have hx₂ : x / 2 ∈ Set.Ioo 0 (π / 2) := ⟨by linarith, by linarith⟩
-  have hsin : 0 < sin (x / 2) := sin_pos_of_pos_of_lt_pi hx₂.1 (by linarith [hx₂.2, pi_pos])
-  have hcos : 0 < cos (x / 2) := cos_pos_of_mem_Ioo ⟨by linarith [hx₂.1, pi_pos], hx₂.2⟩
-  have htan : 0 < tan (x / 2) := by
-    rw [tan_eq_sin_div_cos]
-    exact div_pos hsin hcos
-  have hhalf : HasDerivAt (fun t : ℝ ↦ t / 2) (1 / 2) x := (hasDerivAt_id' x).div_const 2
-  have htan_d := (Real.hasDerivAt_tan hcos.ne').comp x hhalf
-  have hlog_d := htan_d.log htan.ne'
-  convert hlog_d using 1
-  · rfl
-  · simp only [Function.comp_apply, tan_eq_sin_div_cos]
-    have hx_eq : x = 2 * (x / 2) := by ring
-    rw [hx_eq, sin_two_mul]
-    field_simp [hsin.ne', hcos.ne']
-
-/-- For `a, b ∈ (0, π)`, `∫ x in a..b, (sin x)⁻¹ = log (tan (b / 2)) - log (tan (a / 2))`. -/
-theorem integral_inv_sin {a b : ℝ} (ha₀ : 0 < a) (haπ : a < π) (hb₀ : 0 < b) (hbπ : b < π) :
-    ∫ x in a..b, (sin x)⁻¹ = log (tan (b / 2)) - log (tan (a / 2)) := by
-  have hsub : Set.uIcc a b ⊆ Set.Ioo 0 π := by
-    intro x hx
-    rcases Set.mem_uIcc.mp hx with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> exact ⟨by linarith, by linarith⟩
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt
-    (f := fun t : ℝ ↦ log (tan (t / 2))) (f' := fun t : ℝ ↦ (sin t)⁻¹) ?_ ?_
-  · intro x hx
-    have hx' : x ∈ Set.Ioo 0 π := hsub hx
-    exact hasDerivAt_log_tan_div_two hx'.1 hx'.2
-  · exact (continuousOn_inv_sin_Ioo.mono hsub).intervalIntegrable
-
-/-- Integral of `(sin x)⁻¹` over `[a, π - a]` for `a ∈ (0, π)`. -/
-theorem integral_inv_sin_pi_sub {a : ℝ} (ha₀ : 0 < a) (haπ : a < π) :
-    ∫ x in a..(π - a), (sin x)⁻¹ = 2 * log (tan (a / 2))⁻¹ := by
-  have hhalf : (π - a) / 2 = π / 2 - a / 2 := by ring
-  rw [integral_inv_sin ha₀ haπ (sub_pos.mpr haπ) (sub_lt_self π ha₀), hhalf, tan_pi_div_two_sub,
-    log_inv]
-  ring
-
 /-! ### Numeric and trigonometric inequalities -/
 
 /-- Lower bound `1 - π / 4 ≤ log (4 / π)`. -/
 private lemma one_sub_pi_div_four_le_log_four_div_pi : 1 - π / 4 ≤ log (4 / π) := by
   have h := one_sub_inv_le_log_of_pos (div_pos (by norm_num : (0 : ℝ) < 4) pi_pos)
   rwa [inv_div] at h
-
-/-- Lower bound `1.09 < log 3` via `1 - x⁻¹ ≤ log x` at `x = 3 / exp 1`. -/
-private lemma one_point_oh_nine_lt_log_three : 1.09 < log 3 := by
-  have he : 0 < exp 1 := exp_pos 1
-  have h := one_sub_inv_le_log_of_pos (div_pos (by norm_num : (0 : ℝ) < 3) he)
-  rw [log_div (by norm_num) he.ne', log_exp, inv_div] at h
-  have hexp : exp 1 < 2.72 := exp_one_lt_d9.trans (by norm_num)
-  linarith
 
 /-- Each midpoint-Jensen step interval `[π(b - 1/2)/q, π(b + 1/2)/q]` for `2 ≤ b` and
 `b + 1 ≤ q - 1` lies inside `(0, π)`. -/
@@ -199,15 +108,11 @@ private lemma inv_sin_le_mul_integral {q b : ℕ} (hq : 0 < q) (hb2 : 2 ≤ b)
 private lemma sum_Ico_inv_sin_split {q : ℕ} (hq : 4 ≤ q) :
     ∑ b ∈ Ico 1 q, (sin (π * b / q))⁻¹ =
       2 * (sin (π / q))⁻¹ + ∑ b ∈ Ico 2 (q - 1), (sin (π * b / q))⁻¹ := by
-  have h1 : Ico 1 q = insert 1 (Ico 2 q) := by
-    ext b
-    simp only [mem_Ico, mem_insert]
-    omega
-  have h2 : Ico 2 q = insert (q - 1) (Ico 2 (q - 1)) := by
-    ext b
-    simp only [mem_Ico, mem_insert]
-    omega
-  rw [h1, sum_insert (by simp), h2, sum_insert (by simp)]
+  have htop : ∑ b ∈ Ico 2 q, (sin (π * b / q))⁻¹ =
+      (∑ b ∈ Ico 2 (q - 1), (sin (π * b / q))⁻¹) + (sin (π * ↑(q - 1) / q))⁻¹ := by
+    nth_rw 1 [show q = (q - 1) + 1 by omega]
+    rw [sum_Ico_succ_top (by omega)]
+  rw [sum_eq_sum_Ico_succ_bot (by omega : 1 < q), htop]
   have hsin_end : sin (π * ↑(q - 1) / q) = sin (π / q) := by
     have hq0 : (q : ℝ) ≠ 0 := by positivity
     have harg : π * ((q : ℝ) - 1) / q = π - π / q := by field_simp [hq0]
@@ -282,7 +187,7 @@ private lemma sum_Ico_inv_sin_pi_mul_div_lt_of_four_le {q : ℕ} (hq : 4 ≤ q) 
     have hpi : π < 3.15 := pi_lt_d4.trans (by norm_num)
     have hqsq : (16 : ℝ) ≤ (q : ℝ) ^ 2 := by nlinarith
     have hterm : 7 * π ^ 2 / (60 * (q : ℝ) ^ 2) ≤ 7 * 3.15 ^ 2 / (60 * 16) := by gcongr
-    linarith [one_point_oh_nine_lt_log_three]
+    linarith [(by norm_num : (1.09 : ℝ) < 1.0986122885).trans log_three_gt_d9]
   calc
     ∑ b ∈ Ico 1 q, (sin (π * b / q))⁻¹
       = 2 * (sin (π / q))⁻¹ + ∑ b ∈ Ico 2 (q - 1), (sin (π * b / q))⁻¹ :=
@@ -344,7 +249,7 @@ private lemma sum_Ico_inv_sin_pi_mul_div_lt_three :
     exact (div_lt_iff₀ (by positivity)).mpr hlt
   have hinner : 1.39 < log 3 + log (4 / π) + π ^ 2 / (12 * (3 : ℝ) ^ 2) := by
     nlinarith [sq_nonneg (π - 3.14), one_sub_pi_div_four_le_log_four_div_pi,
-      one_point_oh_nine_lt_log_three]
+      (by norm_num : (1.09 : ℝ) < 1.0986122885).trans log_three_gt_d9]
   have hfac : 6 / 3.15 < 2 * (3 : ℝ) / π := by
     rw [div_lt_div_iff₀ (by norm_num) pi_pos]; linarith
   push_cast
@@ -375,7 +280,8 @@ is at most `√q * log q`. -/
 theorem two_div_pi_mul_log_add_le_log {x : ℝ} (hx : 3 ≤ x) :
     2 / π * (log x + log (4 / π) + π ^ 2 / (12 * x ^ 2)) ≤ log x := by
   have hlogx : 1.09 ≤ log x :=
-    one_point_oh_nine_lt_log_three.le.trans (log_le_log (by norm_num) hx)
+    ((by norm_num : (1.09 : ℝ) < 1.0986122885).trans log_three_gt_d9).le.trans
+      (log_le_log (by norm_num) hx)
   have hlog_pi : log (4 / π) ≤ 4 / π - 1 := log_le_sub_one_of_pos (div_pos (by norm_num) pi_pos)
   have hpi_gt : 3.1415 < π := pi_gt_d4
   have hpi_lt : π < 3.1416 := pi_lt_d4

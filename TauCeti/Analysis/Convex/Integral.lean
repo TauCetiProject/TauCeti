@@ -9,10 +9,7 @@ public import Mathlib.Analysis.Convex.Integral
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Topology.Semicontinuity.Basic
 import Mathlib.Analysis.Convex.Continuous
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.MeasureTheory.Integral.IntervalAverage
 import TauCeti.Analysis.Convex.Function.Basic
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Jensen's inequality for semicontinuous functions and closed convex hulls
@@ -57,6 +54,8 @@ semicontinuity through `lowerSemicontinuousOn_iff_isClosed_epigraph` and
   `MeasureTheory.IntegrableOn.setAverage_mem_closedConvexHull_image`: an integral against a
   probability measure, or an average, lies in the closed convex hull of the values of the
   function on any set of full measure.
+* `ConvexOn.intervalIntegrable`: a real function convex on `uIcc a b` is interval integrable on
+  `a..b`.
 * `ConvexOn.sub_mul_le_intervalIntegral`: midpoint Jensen's inequality (left Hermite–Hadamard
   inequality) for a convex function on `[a, b]`.
 
@@ -189,34 +188,24 @@ theorem MeasureTheory.IntegrableOn.setAverage_mem_closedConvexHull_image
   convex_closedConvexHull.set_average_mem isClosed_closedConvexHull h0 ht
     ((ae_restrict_mem₀ htm).mono fun _ hx ↦ subset_closedConvexHull (mem_image_of_mem f hx)) hfi
 
-/-! ### Midpoint Jensen's inequality for interval integrals -/
+/-! ### Interval integrability and midpoint Jensen's inequality -/
 
-private lemma ConvexOn.sub_mul_le_intervalIntegral_of_continuousOn {g : ℝ → ℝ} {a b : ℝ}
-    (hg : ConvexOn ℝ (Set.Icc a b) g) (hgc : ContinuousOn g (Set.Icc a b)) (hab : a ≤ b) :
-    (b - a) * g ((a + b) / 2) ≤ ∫ x in a..b, g x := by
-  rcases hab.eq_or_lt with rfl | hlt
-  · simp
-  have hpos : 0 < b - a := sub_pos.mpr hlt
-  have hμ : volume (Set.uIoc a b) = ENNReal.ofReal (b - a) := by
-    rw [Set.uIoc_of_le hab, Real.volume_Ioc]
-  have h0 : volume (Set.uIoc a b) ≠ 0 := by simp [hμ, hlt]
-  have htop : volume (Set.uIoc a b) ≠ ∞ := by simp [hμ]
-  have hsub : Set.uIoc a b ⊆ Set.Icc a b := by
-    rw [Set.uIoc_of_le hab]
-    exact Set.Ioc_subset_Icc_self
-  have hfs : ∀ᵐ x ∂volume.restrict (Set.uIoc a b), (fun x : ℝ ↦ x) x ∈ Set.Icc a b :=
-    (ae_restrict_mem measurableSet_uIoc).mono fun _ hx ↦ hsub hx
-  have hid_int : IntegrableOn (fun x : ℝ ↦ x) (Set.uIoc a b) :=
-    continuousOn_id.integrableOn_Icc.mono_set hsub
-  have hg_int : IntegrableOn (fun x : ℝ ↦ g x) (Set.uIoc a b) :=
-    hgc.integrableOn_Icc.mono_set hsub
-  have hj := hg.map_set_average_le hgc isClosed_Icc h0 htop hfs hid_int hg_int
-  have havg_id : ⨍ x in a..b, x = (a + b) / 2 := by
-    rw [interval_average_eq (fun x ↦ x) a b, smul_eq_mul, integral_id]
-    field_simp [hpos.ne']
-    ring
-  rw [havg_id, interval_average_eq g a b, smul_eq_mul] at hj
-  exact (le_inv_mul_iff₀ hpos).mp hj
+/-- A real-valued function convex on `uIcc a b` is interval integrable on `a..b` with respect
+to Lebesgue measure. -/
+theorem ConvexOn.intervalIntegrable {g : ℝ → ℝ} {a b : ℝ} (hg : ConvexOn ℝ (Set.uIcc a b) g) :
+    IntervalIntegrable g volume a b := by
+  wlog hab : a ≤ b generalizing a b
+  · rw [Set.uIcc_comm] at hg
+    exact (this hg (le_of_not_ge hab)).symm
+  rw [Set.uIcc_of_le hab] at hg
+  obtain ⟨C, hC⟩ := hg.norm_le_on_Ioo
+  have hcont : ContinuousOn g (Set.Ioo a b) := by
+    simpa only [interior_Icc] using hg.continuousOn_interior
+  exact (intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 <|
+    (integrableOn_Icc_iff_integrableOn_Ioo).2 <|
+      IntegrableOn.of_bound measure_Ioo_lt_top
+        (hcont.aestronglyMeasurable measurableSet_Ioo) C
+        (ae_restrict_of_forall_mem measurableSet_Ioo hC)
 
 /-- **Midpoint Jensen's inequality** (left Hermite–Hadamard inequality) on `[a, b]`: for `a ≤ b`
 and a function `g : ℝ → ℝ` convex on `[a, b]`,
@@ -224,50 +213,17 @@ and a function `g : ℝ → ℝ` convex on `[a, b]`,
 theorem ConvexOn.sub_mul_le_intervalIntegral {g : ℝ → ℝ} {a b : ℝ}
     (hg : ConvexOn ℝ (Set.Icc a b) g) (hab : a ≤ b) :
     (b - a) * g ((a + b) / 2) ≤ ∫ x in a..b, g x := by
-  rcases hab.eq_or_lt with rfl | hlt
-  · simp
-  let d : ℕ → ℝ := fun n ↦ (b - a) / (n + 3)
-  let u : ℕ → ℝ := fun n ↦ a + d n
-  let v : ℕ → ℝ := fun n ↦ b - d n
-  have hd_pos (n : ℕ) : 0 < d n := div_pos (sub_pos.mpr hlt) (by positivity)
-  have huv_le (n : ℕ) : u n ≤ v n := by
-    have hstep : 2 * d n ≤ b - a := by
-      dsimp only [d]; rw [mul_div_assoc', div_le_iff₀ (by positivity)]; nlinarith [hlt]
-    dsimp only [u, v]; linarith
-  have hcont_Ioo : ContinuousOn g (Set.Ioo a b) := by
-    simpa only [interior_Icc] using ConvexOn.continuousOn_interior hg
-  have hstep (n : ℕ) : (v n - u n) * g ((a + b) / 2) ≤ ∫ x in u n..v n, g x := by
-    have hmid : (u n + v n) / 2 = (a + b) / 2 := by dsimp only [u, v]; ring
-    have hsub : Set.Icc (u n) (v n) ⊆ Set.Ioo a b :=
-      fun _ hx ↦ ⟨(by linarith [hd_pos n, hx.1]), (by linarith [hd_pos n, hx.2])⟩
-    rw [← hmid]
-    exact (hg.subset (Set.Icc_subset_Icc (by linarith [hd_pos n]) (by linarith [hd_pos n]))
-      (convex_Icc _ _)).sub_mul_le_intervalIntegral_of_continuousOn
-        (hcont_Ioo.mono hsub) (huv_le n)
-  obtain ⟨C, hC⟩ := hg.norm_le_on_Ioo
-  have hg_int : IntervalIntegrable g volume a b :=
-    (intervalIntegrable_iff_integrableOn_Icc_of_le hlt.le).2 <|
-      (integrableOn_Icc_iff_integrableOn_Ioo).2 <|
-        IntegrableOn.of_bound measure_Ioo_lt_top
-          (hcont_Ioo.aestronglyMeasurable measurableSet_Ioo) C
-          (ae_restrict_of_forall_mem measurableSet_Ioo hC)
-  have h0 : Filter.Tendsto d Filter.atTop (nhds 0) :=
-    tendsto_const_nhds.div_atTop
-      (Filter.tendsto_atTop_add_const_right _ 3 tendsto_natCast_atTop_atTop)
-  have hu_lim : Filter.Tendsto u Filter.atTop (nhds a) := by
-    simpa [u] using tendsto_const_nhds.add h0
-  have hv_lim : Filter.Tendsto v Filter.atTop (nhds b) := by
-    simpa [v] using tendsto_const_nhds.sub h0
-  have hlim_rhs : Filter.Tendsto (fun n : ℕ ↦ ∫ x in u n..v n, g x) Filter.atTop
-      (nhds (∫ x in a..b, g x)) :=
-    TauCeti.intervalIntegral.tendsto_integral_of_mem_uIcc hg_int hu_lim hv_lim
-      (Filter.Eventually.of_forall fun n ↦ by
-        rw [Set.uIcc_of_le hlt.le]
-        exact ⟨by linarith [hd_pos n], by linarith [huv_le n, hd_pos n]⟩)
-      (Filter.Eventually.of_forall fun n ↦ by
-        rw [Set.uIcc_of_le hlt.le]
-        exact ⟨by linarith [huv_le n, hd_pos n], by linarith [hd_pos n]⟩)
-  have hlim_lhs : Filter.Tendsto (fun n : ℕ ↦ (v n - u n) * g ((a + b) / 2)) Filter.atTop
-      (nhds ((b - a) * g ((a + b) / 2))) :=
-    (hv_lim.sub hu_lim).mul_const _
-  exact le_of_tendsto_of_tendsto' hlim_lhs hlim_rhs hstep
+  have hg_int : IntervalIntegrable g volume a b := (Set.uIcc_of_le hab ▸ hg).intervalIntegrable
+  have hg_ref_int : IntervalIntegrable (fun x ↦ g (a + b - x)) volume a b := by
+    simpa only [add_sub_cancel_left, add_sub_cancel_right] using
+      (hg_int.comp_sub_left (a + b)).symm
+  have hmono := intervalIntegral.integral_mono_on hab intervalIntegrable_const
+    (hg_int.add hg_ref_int) fun x hx ↦ hg.two_mul_add_div_two_le hx
+  have hconst : ∫ _ in a..b, 2 * g ((a + b) / 2) = 2 * ((b - a) * g ((a + b) / 2)) := by
+    rw [intervalIntegral.integral_const, smul_eq_mul]
+    ring
+  have href : ∫ x in a..b, g (a + b - x) = ∫ x in a..b, g x := by
+    simpa only [add_sub_cancel_left, add_sub_cancel_right] using
+      intervalIntegral.integral_comp_sub_left g (a + b) (a := a) (b := b)
+  rw [hconst, intervalIntegral.integral_add hg_int hg_ref_int, href, ← two_mul] at hmono
+  linarith

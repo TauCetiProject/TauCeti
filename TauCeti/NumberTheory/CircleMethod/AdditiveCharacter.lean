@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.Analysis.Normed.Group.AddCircle.Trigonometric
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # The additive character `e(α) = exp(2πiα)` and geometric sums
@@ -392,6 +393,14 @@ theorem norm_sum_Ioc_expTwoPiI_eq (M : ℤ) (N : ℕ) {β : ℝ} (hβ : distInt 
     norm_div, norm_mul, norm_expTwoPiI, one_mul, norm_expTwoPiI_sub_one,
     norm_expTwoPiI_sub_one, mul_div_mul_left _ _ two_ne_zero, mul_assoc]
 
+private lemma sin_pi_mul_div_pos {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b < q) :
+    0 < Real.sin (π * b / q) := by
+  have hqpos : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
+  have hx₀ : (0 : ℝ) < (b : ℝ) / q := div_pos (by exact_mod_cast (by omega : 0 < b)) hqpos
+  have hx₁ : (b : ℝ) / q < 1 := (div_lt_one hqpos).mpr (by exact_mod_cast hbq)
+  rw [mul_div_assoc]
+  exact sin_pi_mul_pos_of_pos_of_lt_one hx₀ hx₁
+
 /-- Exact modulus of a character-expansion geometric sum: for `1 ≤ b < q`, `M : ℤ`, and `N : ℕ`,
 `‖∑ n ∈ Ioc M (M + N), e(b * n / q)‖ = |sin (π * b * N / q)| / sin (π * b / q)`. -/
 theorem norm_sum_Ioc_expTwoPiI_mul_div_eq {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b < q)
@@ -408,12 +417,6 @@ theorem norm_sum_Ioc_expTwoPiI_mul_div_eq {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b
     have : (0 : ℤ) < m := Int.cast_pos.mp hm₀
     have : m < 1 := Int.cast_lt.mp (by exact_mod_cast hm₁)
     omega
-  have hlt : π * (b : ℝ) / q < π := by
-    have hbq' : (b : ℝ) < q := by exact_mod_cast hbq
-    rw [div_lt_iff₀ hqpos]
-    nlinarith [Real.pi_pos]
-  have hsin_pos : 0 < Real.sin (π * b / q) :=
-    Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos Real.pi_pos hbpos) hqpos) hlt
   have heq : ∑ n ∈ Finset.Ioc M (M + N), expTwoPiI ((b : ℝ) * n / q) =
       ∑ n ∈ Finset.Ioc M (M + N), expTwoPiI (n * ((b : ℝ) / q)) := by
     refine Finset.sum_congr rfl fun n _ ↦ ?_
@@ -421,7 +424,8 @@ theorem norm_sum_Ioc_expTwoPiI_mul_div_eq {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b
     ring
   have hargN : π * (N : ℝ) * ((b : ℝ) / q) = π * b * N / q := by ring
   have harg1 : π * ((b : ℝ) / q) = π * b / q := by ring
-  rw [heq, norm_sum_Ioc_expTwoPiI_eq M N hdist, hargN, harg1, abs_of_pos hsin_pos]
+  rw [heq, norm_sum_Ioc_expTwoPiI_eq M N hdist, hargN, harg1,
+    abs_of_pos (sin_pi_mul_div_pos hb₀ hbq)]
 
 /-- Upper bound for a character-expansion geometric sum: for `1 ≤ b < q`, `M : ℤ`, and `N : ℕ`,
 `‖∑ n ∈ Ioc M (M + N), e(b * n / q)‖ ≤ min N (sin (π * b / q))⁻¹`. -/
@@ -435,15 +439,7 @@ theorem norm_sum_Ioc_expTwoPiI_mul_div_le {b q : ℕ} (hb₀ : 1 ≤ b) (hbq : b
         ≤ ∑ _n ∈ Finset.Ioc M (M + N), ‖expTwoPiI ((b : ℝ) * _n / q)‖ := norm_sum_le _ _
       _ = N := by simp [norm_expTwoPiI, Int.card_Ioc]
   · rw [norm_sum_Ioc_expTwoPiI_mul_div_eq hb₀ hbq, inv_eq_one_div]
-    have hqpos : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
-    have hbpos : (0 : ℝ) < b := by exact_mod_cast (by omega : 0 < b)
-    have hlt : π * (b : ℝ) / q < π := by
-      have hbq' : (b : ℝ) < q := by exact_mod_cast hbq
-      rw [div_lt_iff₀ hqpos]
-      nlinarith [Real.pi_pos]
-    have hsin_pos : 0 < Real.sin (π * b / q) :=
-      Real.sin_pos_of_pos_of_lt_pi (div_pos (mul_pos Real.pi_pos hbpos) hqpos) hlt
-    exact div_le_div_of_nonneg_right (Real.abs_sin_le_one _) hsin_pos.le
+    exact div_le_div_of_nonneg_right (Real.abs_sin_le_one _) (sin_pi_mul_div_pos hb₀ hbq).le
 
 /-! ### Checks -/
 

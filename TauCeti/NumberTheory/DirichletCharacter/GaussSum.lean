@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.Cyclotomic.Gal
 public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.GaussSum.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
-public import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
 public import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 public import TauCeti.NumberTheory.MulChar.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
@@ -36,9 +35,7 @@ residues modulo a multiple `N` of `v` has Fourier coefficients supported on the 
 `N / v`, where they are multiples of `φ` by the Gauss sum `g(φ⁻¹)`
 (`DirichletCharacter.IsPrimitive.sum_inv_mul_stdAddChar`). Dually, a primitive `ψ` modulo `u`
 carried to the multiples of `v` modulo `u v` has Fourier coefficients `ψ⁻¹` times the Gauss sum
-`g(ψ)` (`DirichletCharacter.IsPrimitive.sum_ite_dvd_val_mul_stdAddChar`), and at level `q` itself
-a primitive character satisfies the Gauss-sum expansion
-`DirichletCharacter.mul_gaussSum_inv_stdAddChar_eq_sum`.
+`g(ψ)` (`DirichletCharacter.IsPrimitive.sum_ite_dvd_val_mul_stdAddChar`).
 
 The Gauss-sum identities are classical; see K. Ireland and M. Rosen, *A Classical Introduction to
 Modern Number Theory*, Chapter 6.
@@ -276,29 +273,5 @@ theorem IsPrimitive.sum_ite_dvd_val_mul_stdAddChar {u v : ℕ} [NeZero u] [NeZer
       rwa [ZMod.natCast_zmod_val, ← mul_assoc] at h
     simp_rw [hchar, ZMod.natCast_zmod_val, ← gaussSum_mulShift_of_isPrimitive _ hψ, gaussSum,
       AddChar.mulShift_apply, mul_comm]
-
-/-- **Gauss-sum expansion of a primitive character:** for `χ` primitive modulo `q ≥ 1` and
-every integer `n`, `χ n * τ(χ⁻¹) = ∑_{b mod q} χ⁻¹ b * e(b.val * n / q)`. -/
-theorem mul_gaussSum_inv_stdAddChar_eq_sum {q : ℕ} [NeZero q]
-    {χ : DirichletCharacter ℂ q} (hχ : χ.IsPrimitive) (n : ℤ) :
-    χ n * gaussSum χ⁻¹ ZMod.stdAddChar =
-      ∑ b : ZMod q, χ⁻¹ b * TauCeti.expTwoPiI ((b.val : ℝ) * n / q) := by
-  have h := gaussSum_mulShift_of_isPrimitive (ZMod.stdAddChar (N := q)) hχ.inv (n : ZMod q)
-  rw [inv_inv] at h
-  rw [← h, gaussSum]
-  have hstd (b : ZMod q) :
-      ZMod.stdAddChar (b * (n : ZMod q)) = TauCeti.expTwoPiI ((b.val : ℝ) * n / q) := by
-    calc
-      ZMod.stdAddChar (b * (n : ZMod q))
-        = ZMod.stdAddChar (((b.val : ℤ) * n : ℤ) : ZMod q) := by
-          push_cast
-          rw [ZMod.natCast_zmod_val]
-      _ = TauCeti.expTwoPiI ((b.val : ℝ) * n / q) := by
-          rw [TauCeti.stdAddChar_intCast_eq_expTwoPiI]
-          congr 1
-          push_cast
-          ring
-  refine Finset.sum_congr rfl fun b _ ↦ ?_
-  rw [AddChar.mulShift_apply, mul_comm (n : ZMod q) b, hstd b]
 
 end DirichletCharacter

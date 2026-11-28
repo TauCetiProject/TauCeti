@@ -23,6 +23,8 @@ and `MulChar.gaussSum_eq_I_mul_sum_mul_im_of_odd` gives
 Specializing to the standard additive character `ZMod.stdAddChar` and isolating the `1 ≤ b < q`
 frequencies gives:
 
+* `DirichletCharacter.mul_gaussSum_inv_stdAddChar_eq_sum`: the primitive-character Gauss-sum
+  expansion at `ZMod.stdAddChar`;
 * `DirichletCharacter.intervalSum_eq_inv_gaussSum_mul_sum`: the full exponential expansion;
 * `DirichletCharacter.Even.intervalSum_eq_inv_gaussSum_mul_sum_cos`: the cosine expansion for even
   primitive characters;
@@ -75,6 +77,26 @@ theorem Odd.intervalSum_mul_gaussSum_eq_I_mul_sum_im (hχ : χ.Odd) (hprim : χ.
   rw [← mul_sum, sum_comm]
   simp only [Complex.ofReal_sum, mul_sum]
 
+private lemma stdAddChar_intCast_mul_natCast {q : ℕ} [NeZero q] (n : ℤ) (b : ℕ) :
+    ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q)) = TauCeti.expTwoPiI ((b : ℝ) * n / q) := by
+  rw [← Int.cast_natCast b, ← Int.cast_mul, TauCeti.stdAddChar_intCast_eq_expTwoPiI]
+  congr 1
+  push_cast
+  ring
+
+/-- **Gauss-sum expansion of a primitive character:** for `χ` primitive modulo `q ≥ 1` and
+every integer `n`, `χ n * τ(χ⁻¹) = ∑_{b mod q} χ⁻¹ b * e(b.val * n / q)`. -/
+theorem mul_gaussSum_inv_stdAddChar_eq_sum (hχ : χ.IsPrimitive) (n : ℤ) :
+    χ n * gaussSum χ⁻¹ ZMod.stdAddChar =
+      ∑ b : ZMod q, χ⁻¹ b * TauCeti.expTwoPiI ((b.val : ℝ) * n / q) := by
+  have h := gaussSum_mulShift_of_isPrimitive (ZMod.stdAddChar (N := q)) hχ.inv (n : ZMod q)
+  rw [inv_inv] at h
+  rw [← h, gaussSum]
+  refine Finset.sum_congr rfl fun b _ ↦ ?_
+  rw [AddChar.mulShift_apply]
+  nth_rw 2 [← ZMod.natCast_zmod_val b]
+  rw [stdAddChar_intCast_mul_natCast]
+
 /-- **Gauss-sum expansion of a character interval sum:** for `χ` primitive modulo `q ≥ 2`, `M : ℤ`,
 and `N : ℕ`, `S_χ(M, N) = τ(χ⁻¹)⁻¹ * ∑_{1 ≤ b < q} χ⁻¹ b * ∑_{M < n ≤ M + N} e(b * n / q)`. -/
 theorem intervalSum_eq_inv_gaussSum_mul_sum (hχ : χ.IsPrimitive) (hq : 2 ≤ q) (M : ℤ) (N : ℕ) :
@@ -108,10 +130,8 @@ theorem Even.intervalSum_eq_inv_gaussSum_mul_sum_cos (hχe : χ.Even) (hχ : χ.
   simp only [Complex.ofReal_sum] at hre
   have hterm (b : ℕ) (n : ℤ) :
       (ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q))).re = Real.cos (2 * π * b * n / q) := by
-    rw [← Int.cast_natCast b, ← Int.cast_mul, TauCeti.stdAddChar_intCast_eq_expTwoPiI,
-      TauCeti.re_expTwoPiI]
+    rw [stdAddChar_intCast_mul_natCast, TauCeti.re_expTwoPiI]
     congr 1
-    push_cast
     ring
   have hsum : (∑ b : ZMod q, χ⁻¹ b *
         ∑ n ∈ Ioc M (M + N), ((ZMod.stdAddChar ((n : ZMod q) * b)).re : ℂ)) =
@@ -129,10 +149,7 @@ theorem Odd.intervalSum_eq_inv_gaussSum_mul_sum_sin (hχo : χ.Odd) (hχ : χ.Is
     (M : ℤ) (N : ℕ) :
     χ.intervalSum M N = (gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ * Complex.I *
       ∑ b ∈ Ico 1 q, χ⁻¹ b * ∑ n ∈ Ioc M (M + N), (Real.sin (2 * π * b * n / q) : ℂ) := by
-  have hχ1 : χ ≠ 1 := fun h ↦ by
-    have hneg : (1 : DirichletCharacter ℂ q) (-1) = -1 := h ▸ hχo
-    rw [MulChar.one_apply isUnit_one.neg] at hneg
-    norm_num at hneg
+  have hχ1 : χ ≠ 1 := fun h ↦ Odd.not_even 1 (h ▸ hχo) even_one
   have hq : 2 ≤ q := by
     have := χ.three_le_level_of_ne_one hχ1
     omega
@@ -142,10 +159,8 @@ theorem Odd.intervalSum_eq_inv_gaussSum_mul_sum_sin (hχo : χ.Odd) (hχ : χ.Is
   simp only [Complex.ofReal_sum] at him
   have hterm (b : ℕ) (n : ℤ) :
       (ZMod.stdAddChar ((n : ZMod q) * (b : ZMod q))).im = Real.sin (2 * π * b * n / q) := by
-    rw [← Int.cast_natCast b, ← Int.cast_mul, TauCeti.stdAddChar_intCast_eq_expTwoPiI,
-      TauCeti.im_expTwoPiI]
+    rw [stdAddChar_intCast_mul_natCast, TauCeti.im_expTwoPiI]
     congr 1
-    push_cast
     ring
   have hsum : (∑ b : ZMod q, χ⁻¹ b *
         ∑ n ∈ Ioc M (M + N), ((ZMod.stdAddChar ((n : ZMod q) * b)).im : ℂ)) =

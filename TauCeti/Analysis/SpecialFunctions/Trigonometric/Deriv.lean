@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Convex.Mul
+import Mathlib.Analysis.Convex.SpecificFunctions.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -43,6 +46,10 @@ Every iterated derivative of `sin` is `±sin` or `±cos`. Hence it is bounded by
 Away from `f x = ±1`, the chain rule for `Real.arccos` gives the derivative
 `-(1 / √(1 - f x ^ 2)) * f'` of `y ↦ arccos (f y)` (`HasDerivAt.arccos`), the counterpart of
 Mathlib's `HasDerivAt.arctan`.
+
+On `(0, π)`, the cosecant `x ↦ (sin x)⁻¹` is continuous (`TauCeti.continuousOn_inv_sin_Ioo`) and
+convex (`TauCeti.convexOn_inv_sin_Ioo`), with antiderivative `log (tan (x / 2))`
+(`TauCeti.hasDerivAt_log_tan_div_two`).
 -/
 
 public section
@@ -159,6 +166,50 @@ theorem exists_abs_iteratedDeriv_sin_eq_one (n : ℕ) : ∃ x, |iteratedDeriv n 
   obtain ⟨m, rfl | rfl⟩ := Nat.even_or_odd' n
   · exact ⟨π / 2, by simp⟩
   · exact ⟨0, by simp⟩
+
+/-- The function `x ↦ (sin x)⁻¹` is continuous on `(0, π)`. -/
+theorem continuousOn_inv_sin_Ioo : ContinuousOn (fun x : ℝ ↦ (sin x)⁻¹) (Set.Ioo 0 π) :=
+  continuousOn_sin.inv₀ fun _ hx ↦ (sin_pos_of_pos_of_lt_pi hx.1 hx.2).ne'
+
+/-- The function `x ↦ (sin x)⁻¹` is convex on `(0, π)`. -/
+theorem convexOn_inv_sin_Ioo : ConvexOn ℝ (Set.Ioo 0 π) (fun x : ℝ ↦ (sin x)⁻¹) := by
+  have hinv : ConvexOn ℝ (Set.Ioi 0) (fun y : ℝ ↦ y⁻¹) := by
+    simpa only [zpow_neg, zpow_one] using convexOn_zpow (𝕜 := ℝ) (-1)
+  refine ⟨convex_Ioo 0 π, fun x hx y hy a b ha hb hab ↦ ?_⟩
+  have hsinx : 0 < sin x := sin_pos_of_pos_of_lt_pi hx.1 hx.2
+  have hsiny : 0 < sin y := sin_pos_of_pos_of_lt_pi hy.1 hy.2
+  have hxy : a • x + b • y ∈ Set.Ioo 0 π := convex_Ioo 0 π hx hy ha hb hab
+  have hcomb : 0 < a • sin x + b • sin y := by
+    rcases eq_or_lt_of_le ha with rfl | ha'
+    · rw [zero_add] at hab
+      rw [zero_smul, zero_add, hab, one_smul]
+      exact hsiny
+    · exact add_pos_of_pos_of_nonneg (smul_pos ha' hsinx) (smul_nonneg hb hsiny.le)
+  have hsin : a • sin x + b • sin y ≤ sin (a • x + b • y) :=
+    strictConcaveOn_sin_Icc.concaveOn.2 (Set.Ioo_subset_Icc_self hx)
+      (Set.Ioo_subset_Icc_self hy) ha hb hab
+  have hanti : (sin (a • x + b • y))⁻¹ ≤ (a • sin x + b • sin y)⁻¹ :=
+    antitoneOn_inv_pos hcomb (sin_pos_of_pos_of_lt_pi hxy.1 hxy.2) hsin
+  exact hanti.trans (hinv.2 hsinx hsiny ha hb hab)
+
+/-- The antiderivative of `(sin x)⁻¹` on `(0, π)` is `log (tan (x / 2))`. -/
+theorem hasDerivAt_log_tan_div_two {x : ℝ} (hx₀ : 0 < x) (hxπ : x < π) :
+    HasDerivAt (fun t : ℝ ↦ log (tan (t / 2))) (sin x)⁻¹ x := by
+  have hx₂ : x / 2 ∈ Set.Ioo 0 (π / 2) := ⟨by linarith, by linarith⟩
+  have hsin : 0 < sin (x / 2) := sin_pos_of_pos_of_lt_pi hx₂.1 (by linarith [hx₂.2, pi_pos])
+  have hcos : 0 < cos (x / 2) := cos_pos_of_mem_Ioo ⟨by linarith [hx₂.1, pi_pos], hx₂.2⟩
+  have htan : 0 < tan (x / 2) := by
+    rw [tan_eq_sin_div_cos]
+    exact div_pos hsin hcos
+  have hhalf : HasDerivAt (fun t : ℝ ↦ t / 2) (1 / 2) x := (hasDerivAt_id' x).div_const 2
+  have htan_d := (Real.hasDerivAt_tan hcos.ne').comp x hhalf
+  have hlog_d := htan_d.log htan.ne'
+  convert hlog_d using 1
+  · rfl
+  · simp only [Function.comp_apply, tan_eq_sin_div_cos]
+    have hx_eq : x = 2 * (x / 2) := by ring
+    rw [hx_eq, sin_two_mul]
+    field_simp [hsin.ne', hcos.ne']
 
 end TauCeti
 

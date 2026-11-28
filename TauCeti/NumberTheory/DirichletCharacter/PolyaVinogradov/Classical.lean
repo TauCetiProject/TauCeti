@@ -7,18 +7,16 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
-public import Mathlib.NumberTheory.DirichletCharacter.GaussSum
 public import Mathlib.RingTheory.Radical.NatInt
-public import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
 public import TauCeti.NumberTheory.DirichletCharacter.IntervalSum
 
 import Mathlib.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.CosecantSum
+import TauCeti.Data.ZMod.FinEquiv
+import TauCeti.NumberTheory.CircleMethod.AdditiveCharacter
 import TauCeti.NumberTheory.DirichletCharacter.Basic
-import TauCeti.NumberTheory.DirichletCharacter.Conductor
-import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 import TauCeti.NumberTheory.DirichletCharacter.InducedSum
-import TauCeti.NumberTheory.DirichletCharacter.TrigonometricSum
+import TauCeti.NumberTheory.DirichletCharacter.PolyaVinogradov.Basic
 
 /-!
 # The classical explicit Pólya–Vinogradov inequality
@@ -27,18 +25,19 @@ This file proves the classical explicit Pólya–Vinogradov inequality for primi
 and prime-level complex Dirichlet characters.
 
 For a primitive character `χ : DirichletCharacter ℂ q` (`q ≥ 2`) and integers `M : ℤ`, `N : ℕ`,
-the Gauss-sum expansion `DirichletCharacter.intervalSum_eq_inv_gaussSum_mul_sum` gives
+discrete Fourier inversion `DirichletCharacter.norm_sum_range_add_le_fourier` together with
+`DirichletCharacter.intervalSum_eq_sum_range` gives
 
-  `S_χ(M, N) = τ(χ⁻¹)⁻¹ * ∑_{1 ≤ b < q} χ⁻¹ b * ∑_{M < n ≤ M + N} e(b * n / q)`,
+  `‖S_χ(M, N)‖ ≤ (√q)⁻¹ * ∑_{1 ≤ b < q} ‖∑_{M < n ≤ M + N} e(b * n / q)‖`,
 
-where `|τ(χ⁻¹)| = √q` and the inner geometric sum has modulus
+where each inner geometric sum has modulus
 `|sin (π * b * N / q)| / sin (π * b / q) ≤ min N (sin (π * b / q))⁻¹`
 (`TauCeti.norm_sum_Ioc_expTwoPiI_mul_div_le`). Bounding each inner sum by `(sin (π * b / q))⁻¹`
 and applying Pomerance's cosecant-sum inequality `TauCeti.sum_Ico_inv_sin_pi_mul_div_lt` yields
 
   `‖S_χ(M, N)‖ < (2 / π) * √q * (log q + log (4 / π) + π ^ 2 / (12 * q ^ 2))`,
 
-both pointwise (`DirichletCharacter.norm_intervalSum_lt_of_isPrimitive`) and for the maximal
+both pointwise (`DirichletCharacter.polya_vinogradov_classical`) and for the maximal
 interval sum `χ.maxIntervalSum` (`DirichletCharacter.maxIntervalSum_lt_of_isPrimitive`). Combining
 this with the primitive reduction
 `DirichletCharacter.maxIntervalSum_le_pow_mul_maxIntervalSum_primitiveCharacter` extends the bound
@@ -50,7 +49,7 @@ for any nonprincipal character modulo a prime `p`), `TauCeti.two_div_pi_mul_log_
 
 * `DirichletCharacter.norm_intervalSum_le_inv_sqrt_mul_sum_min`:
   `‖S_χ(M, N)‖ ≤ (√q)⁻¹ * ∑_{1 ≤ b < q} min N (sin (π * b / q))⁻¹`.
-* `DirichletCharacter.norm_intervalSum_lt_of_isPrimitive`,
+* `DirichletCharacter.polya_vinogradov_classical`,
   `DirichletCharacter.maxIntervalSum_lt_of_isPrimitive`: classical explicit Pólya–Vinogradov
   inequality for primitive `χ` modulo `q ≥ 2`.
 * `DirichletCharacter.maxIntervalSum_lt_of_ne_one`,
@@ -77,7 +76,7 @@ open scoped ArithmeticFunction.omega Real
 
 namespace DirichletCharacter
 
-/-! ### Pointwise bound from the Gauss-sum expansion -/
+/-! ### Pointwise bound from discrete Fourier inversion -/
 
 /-- Bounding every character interval sum of a primitive character modulo `q ≥ 2` by the
 normalized sum of `min N (sin (π * b / q))⁻¹`. -/
@@ -86,26 +85,62 @@ theorem norm_intervalSum_le_inv_sqrt_mul_sum_min {q : ℕ} {χ : DirichletCharac
     ‖χ.intervalSum M N‖ ≤
       (Real.sqrt q)⁻¹ * ∑ b ∈ Ico 1 q, min (N : ℝ) (Real.sin (π * b / q))⁻¹ := by
   have : NeZero q := ⟨by omega⟩
-  rw [intervalSum_eq_inv_gaussSum_mul_sum hχ hq M N, norm_mul, norm_inv,
-    hχ.inv.norm_gaussSum (ZMod.isPrimitive_stdAddChar q)]
-  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-  refine (norm_sum_le _ _).trans (sum_le_sum fun b hb ↦ ?_)
-  rw [norm_mul]
+  have hχ₀ : χ ≠ 1 := fun h ↦ by
+    have := hχ.eq_one_iff.mp h
+    omega
+  have hqpos : (0 : ℝ) < q := by exact_mod_cast (by omega : 0 < q)
+  have hq_fac : Real.sqrt q / q = (Real.sqrt q)⁻¹ := by
+    rw [div_eq_iff hqpos.ne', inv_mul_eq_div, eq_div_iff (Real.sqrt_ne_zero'.mpr hqpos),
+      Real.mul_self_sqrt hqpos.le]
+  let f : ℕ → ℝ := fun b ↦
+    ‖∑ j ∈ range N, ZMod.stdAddChar ((b : ZMod q) * ((M : ZMod q) + 1 + (j : ZMod q)))‖
+  have hsum_eq : ∑ k ∈ univ.erase (0 : ZMod q),
+      ‖∑ j ∈ range N, ZMod.stdAddChar (k * ((M : ZMod q) + 1 + (j : ZMod q)))‖ =
+      ∑ b ∈ Ico 1 q, f b := by
+    have h1 : ∑ k ∈ univ.erase (0 : ZMod q),
+        ‖∑ j ∈ range N, ZMod.stdAddChar (k * ((M : ZMod q) + 1 + (j : ZMod q)))‖ =
+        ∑ k ∈ univ.erase (0 : ZMod q), f k.val :=
+      sum_congr rfl fun k _ ↦ by simp only [f, ZMod.natCast_zmod_val]
+    have h2 : f 0 + ∑ k ∈ univ.erase (0 : ZMod q), f k.val = f 0 + ∑ b ∈ Ico 1 q, f b := by
+      rw [← ZMod.val_zero (n := q),
+        add_sum_erase univ (fun k : ZMod q ↦ f k.val) (mem_univ 0),
+        ZMod.sum_val_eq_sum_range, ← Nat.Ico_zero_eq_range,
+        sum_eq_sum_Ico_succ_bot (NeZero.pos q), ZMod.val_zero]
+    exact h1.trans (add_left_cancel h2)
+  have hterm (b : ℕ) (hb : b ∈ Ico 1 q) :
+      f b ≤ min (N : ℝ) (Real.sin (π * b / q))⁻¹ := by
+    have hgeom : ∑ j ∈ range N, ZMod.stdAddChar ((b : ZMod q) * ((M : ZMod q) + 1 + (j : ZMod q))) =
+        ∑ n ∈ Ioc M (M + N), TauCeti.expTwoPiI ((b : ℝ) * n / q) := by
+      rw [Int.Ioc_eq_finset_map, add_sub_cancel_left, Int.toNat_natCast, sum_map]
+      refine sum_congr rfl fun j _ ↦ ?_
+      simp only [Function.Embedding.trans_apply, Nat.castEmbedding_apply, addLeftEmbedding_apply]
+      rw [show (b : ZMod q) * ((M : ZMod q) + 1 + (j : ZMod q)) =
+          (((b : ℤ) * (M + 1 + j) : ℤ) : ZMod q) by push_cast; ring,
+        TauCeti.stdAddChar_intCast_eq_expTwoPiI]
+      congr 1
+      push_cast
+      ring
+    rw [mem_Ico] at hb
+    dsimp only [f]
+    rw [hgeom]
+    exact TauCeti.norm_sum_Ioc_expTwoPiI_mul_div_le hb.1 hb.2 M N
   calc
-    ‖χ⁻¹ (b : ZMod q)‖ * ‖∑ n ∈ Ioc M (M + N), TauCeti.expTwoPiI ((b : ℝ) * n / q)‖
-      ≤ 1 * min (N : ℝ) (Real.sin (π * b / q))⁻¹ := by
-        gcongr
-        · exact χ⁻¹.norm_le_one _
-        · rw [mem_Ico] at hb
-          exact TauCeti.norm_sum_Ioc_expTwoPiI_mul_div_le hb.1 hb.2 M N
-    _ = min (N : ℝ) (Real.sin (π * b / q))⁻¹ := one_mul _
+    ‖χ.intervalSum M N‖
+      = ‖∑ j ∈ range N, χ ((M : ZMod q) + 1 + (j : ZMod q))‖ := by
+        rw [intervalSum_eq_sum_range]
+    _ ≤ (Real.sqrt q / q) * ∑ k ∈ univ.erase (0 : ZMod q),
+          ‖∑ j ∈ range N, ZMod.stdAddChar (k * ((M : ZMod q) + 1 + (j : ZMod q)))‖ :=
+        norm_sum_range_add_le_fourier χ hχ hχ₀ ((M : ZMod q) + 1) N
+    _ = (Real.sqrt q)⁻¹ * ∑ b ∈ Ico 1 q, f b := by rw [hq_fac, hsum_eq]
+    _ ≤ (Real.sqrt q)⁻¹ * ∑ b ∈ Ico 1 q, min (N : ℝ) (Real.sin (π * b / q))⁻¹ :=
+        mul_le_mul_of_nonneg_left (sum_le_sum hterm) (by positivity)
 
 /-! ### The classical explicit Pólya–Vinogradov inequality -/
 
 /-- **Classical explicit Pólya–Vinogradov inequality.** For a primitive complex Dirichlet
 character `χ` modulo `q ≥ 2` and all `M : ℤ`, `N : ℕ`,
 `‖S_χ(M, N)‖ < (2 / π) * √q * (log q + log (4 / π) + π ^ 2 / (12 * q ^ 2))`. -/
-theorem norm_intervalSum_lt_of_isPrimitive {q : ℕ} (χ : DirichletCharacter ℂ q)
+theorem polya_vinogradov_classical {q : ℕ} (χ : DirichletCharacter ℂ q)
     (hχ : χ.IsPrimitive) (hq : 2 ≤ q) (M : ℤ) (N : ℕ) :
     ‖χ.intervalSum M N‖ <
       2 / π * Real.sqrt q * (Real.log q + Real.log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2)) := by
@@ -142,7 +177,7 @@ theorem maxIntervalSum_lt_of_isPrimitive {q : ℕ} [NeZero q] (χ : DirichletCha
       2 / π * Real.sqrt q * (Real.log q + Real.log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2)) := by
   obtain ⟨M, -, N, -, hMN⟩ := χ.exists_norm_intervalSum_eq_maxIntervalSum
   rw [← hMN]
-  exact χ.norm_intervalSum_lt_of_isPrimitive hχ hq M N
+  exact χ.polya_vinogradov_classical hχ hq M N
 
 /-- **Classical explicit Pólya–Vinogradov inequality for arbitrary nonprincipal characters:** for
 `χ ≠ 1` modulo `q ≥ 1` with conductor `q*` and `r = radical q / gcd (radical q) q*`,
@@ -153,9 +188,7 @@ theorem maxIntervalSum_lt_of_ne_one {q : ℕ} [NeZero q] (χ : DirichletCharacte
       2 ^ ω (radical q / (radical q).gcd χ.conductor) *
         (2 / π * Real.sqrt χ.conductor *
           (Real.log χ.conductor + Real.log (4 / π) + π ^ 2 / (12 * (χ.conductor : ℝ) ^ 2))) := by
-  have hc₁ : χ.conductor ≠ 1 := mt χ.eq_one_iff_conductor_eq_one.mpr hχ
-  have hc₀ : χ.conductor ≠ 0 := χ.conductor_ne_zero
-  have hc₂ : 2 ≤ χ.conductor := by omega
+  have hc₂ := Nat.le_of_succ_le (three_le_conductor_of_ne_one hχ)
   have hωpos : (0 : ℝ) < 2 ^ ω (radical q / (radical q).gcd χ.conductor) := by positivity
   calc
     χ.maxIntervalSum
@@ -192,7 +225,7 @@ theorem norm_intervalSum_lt_sqrt_mul_log_of_isPrimitive {q : ℕ} (χ : Dirichle
   calc
     ‖χ.intervalSum M N‖
       < 2 / π * Real.sqrt q * (Real.log q + Real.log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2)) :=
-        χ.norm_intervalSum_lt_of_isPrimitive hχ hq M N
+        χ.polya_vinogradov_classical hχ hq M N
     _ = Real.sqrt q * (2 / π * (Real.log q + Real.log (4 / π) + π ^ 2 / (12 * (q : ℝ) ^ 2))) := by
         ring
     _ ≤ Real.sqrt q * Real.log q :=

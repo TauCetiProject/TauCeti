@@ -43,8 +43,7 @@ used to identify weak derivatives on an interval with ordinary primitives.
   integral as `ε → 0`.
 * `TauCeti.intervalIntegral.continuousOn_integral_prod`: the interval integral
   `(s, t) ↦ ∫ x in s..t, f x ∂μ` is jointly continuous in both endpoints on
-  `uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms, with
-  endpoint-limit form `TauCeti.intervalIntegral.tendsto_integral_of_mem_uIcc`.
+  `uIcc a b ×ˢ uIcc a b` whenever `f` is interval integrable on `a..b` and `μ` has no atoms.
 * `TauCeti.intervalIntegral.tendsto_sum_integral_Ico_add_sub`: for `a ≤ n` and `f` interval
   integrable on `a..n`, summing `∫ x in (j + δ₁ i)..(j + 1 - δ₂ i), f x ∂μ` over `j ∈ [a, n)`
   converges to `∫ x in a..n, f x ∂μ` as `δ₁, δ₂ → 0` from the right.
@@ -167,19 +166,6 @@ theorem continuousOn_integral_prod {μ : Measure ℝ} [NullSingletonClass μ]
   exact (_root_.intervalIntegral.integral_interval_sub_left
     (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hp2))
     (hf.mono_set (uIcc_subset_uIcc left_mem_uIcc hp1))).symm
-
-/-- If `f` is interval integrable on `a..b` for a measure without atoms, and `u i → a`, `v i → b`
-within `uIcc a b` along `l`, then `∫ x in u i..v i, f x ∂μ → ∫ x in a..b, f x ∂μ`. -/
-theorem tendsto_integral_of_mem_uIcc {μ : Measure ℝ} [NullSingletonClass μ]
-    (hf : IntervalIntegrable f μ a b) {ι : Type*} {l : Filter ι} {u v : ι → ℝ}
-    (hu : Tendsto u l (𝓝 a)) (hv : Tendsto v l (𝓝 b))
-    (hu_mem : ∀ᶠ i in l, u i ∈ uIcc a b) (hv_mem : ∀ᶠ i in l, v i ∈ uIcc a b) :
-    Tendsto (fun i ↦ ∫ x in u i..v i, f x ∂μ) l (𝓝 (∫ x in a..b, f x ∂μ)) := by
-  refine ((continuousOn_integral_prod hf).continuousWithinAt
-    ⟨left_mem_uIcc, right_mem_uIcc⟩).tendsto.comp
-    (tendsto_nhdsWithin_iff.2 ⟨hu.prodMk_nhds hv, ?_⟩)
-  filter_upwards [hu_mem, hv_mem] with i hui hvi
-  exact ⟨hui, hvi⟩
 
 /-- For integers `a ≤ n`, a function `f` interval integrable on `a..n`, and nonnegative
 endpoint perturbations `δ₁, δ₂ → 0`, the sum of integrals `∫ x in (j + δ₁ i)..(j + 1 - δ₂ i), f x`
