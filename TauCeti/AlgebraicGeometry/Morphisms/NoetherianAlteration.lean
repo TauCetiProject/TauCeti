@@ -168,6 +168,29 @@ theorem IsFiniteOverGenericPoints.comp {f : X ⟶ Y} {g : Y ⟶ Z} [LocallyOfFin
   rw [comp_base, TopCat.coe_comp, preimage_comp]
   exact (hg' z hz).preimage' fun y hy ↦ hf y (hg.mem_genericPoints (by rwa [hy]))
 
+/-- If a composite is maximally dominating and its second map is finite over generic points,
+then its first map is maximally dominating. -/
+theorem IsMaximallyDominating.of_comp_of_isFiniteOverGenericPoints {f : X ⟶ Y} {g : Y ⟶ Z}
+    (hfg : (f ≫ g).IsMaximallyDominating) (hg : g.IsFiniteOverGenericPoints) :
+    f.IsMaximallyDominating := by
+  rw [isMaximallyDominating_iff] at hfg ⊢
+  exact fun x hx ↦ hg.mem_genericPoints (hfg x hx)
+
+/-- Finiteness over generic points descends from a composite when the second map preserves
+generic points: a fibre of the first map lies in a fibre of the composite. -/
+theorem IsFiniteOverGenericPoints.of_comp_of_isMaximallyDominating
+    {f : X ⟶ Y} {g : Y ⟶ Z} [LocallyOfFiniteType f]
+    (hfg : (f ≫ g).IsFiniteOverGenericPoints) (hg : g.IsMaximallyDominating) :
+    f.IsFiniteOverGenericPoints := by
+  rw [isFiniteOverGenericPoints_iff_forall_finite_preimage_singleton]
+  intro y hy
+  have := ((f ≫ g).isFiniteOverGenericPoints_iff_forall_isFinite_fiberToSpecResidueField.mp
+    hfg) (g y) (g.isMaximallyDominating_iff.mp hg y hy)
+  exact ((f ≫ g).finite_preimage_singleton_of_isFinite_fiberToSpecResidueField (g y)).subset
+    (fun x hx ↦ by
+      simp only [Set.mem_preimage, Set.mem_singleton_iff] at hx ⊢
+      simp only [comp_apply, hx])
+
 /-- A morphism that is finite over an open subscheme of its target containing every
 component-generic point is finite over the generic points of its target. -/
 theorem isFiniteOverGenericPoints_of_isFinite_morphismRestrict (f : X ⟶ Y) {U : Y.Opens}
