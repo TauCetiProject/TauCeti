@@ -34,17 +34,14 @@ has the power series expansion `NormedSpace.expSeries K A` on the open ball of r
 preservation on `{x | ‖x‖ < amiceRadius p 0}`.
 
 On the open disc `{x | ‖x‖ < amiceRadius p 0}`:
-* In any complete normed `ℚ_[p]`-algebra `A`, `exp x ≠ 0` when `A` is nontrivial
-  (`TauCeti.PadicExp.exp_ne_zero`).
-* In any complete normed division algebra `D` over `ℚ_[p]`, `∑ ‖x ^ n / n!‖` converges
-  (`TauCeti.PadicExp.summable_norm_pow_div_factorial`), `exp (-x) = (exp x)⁻¹`
-  (`TauCeti.PadicExp.exp_neg`), and `exp (x - y) = exp x / exp y` for commuting `x` and `y`
-  (`TauCeti.PadicExp.exp_sub_of_commute`); over a complete normed field `L` over `ℚ_[p]`,
-  `exp (x - y) = exp x / exp y` (`TauCeti.PadicExp.exp_sub`).
+* In any complete normed division algebra `D` over `ℚ_[p]`, `exp (x - y) = exp x / exp y` for
+  commuting `x` and `y` (`TauCeti.PadicExp.exp_sub_of_commute`); over a complete normed field `L`
+  over `ℚ_[p]`, `exp (x - y) = exp x / exp y` (`TauCeti.PadicExp.exp_sub`).
 * In any complete ultrametric normed `ℚ_[p]`-algebra `A`, `NormedSpace.exp` satisfies the
   second-order remainder estimate `‖exp x - 1 - x‖ ≤ ‖x‖ ^ 2 * p ^ (1 / (p - 1))`
   (`TauCeti.PadicExp.norm_exp_sub_one_sub_le`), is an isometry via `‖exp x - exp y‖ = ‖x - y‖`
-  (`TauCeti.PadicExp.norm_exp_sub_exp`), satisfies `exp x = 1 ↔ x = 0`
+  (`TauCeti.PadicExp.norm_exp_sub_exp`) and `‖exp x - 1‖ = ‖x‖`
+  (`TauCeti.PadicExp.norm_exp_sub_one_of_norm_lt`), satisfies `exp x = 1 ↔ x = 0`
   (`TauCeti.PadicExp.exp_eq_one_iff`), and satisfies `‖exp (p : A) - 1‖ = p⁻¹` for odd `p`
   (`TauCeti.PadicExp.norm_exp_natCast_prime_sub_one`).
 
@@ -64,12 +61,11 @@ the subsequence `n = p ^ k` keeps norm at least `amiceRadius p 0`, so `∑ x ^ n
   `TauCeti.PadicExp.radius_expSeries_pos`, `TauCeti.PadicExp.hasFPowerSeriesOnBall_exp`: radius of
   convergence and power-series expansion of `NormedSpace.expSeries K A` (exact radius
   `ENNReal.ofReal (amiceRadius p 0)` whenever `NormOneClass A`).
-* `TauCeti.PadicExp.exp_ne_zero`, `TauCeti.PadicExp.summable_norm_pow_div_factorial`,
-  `TauCeti.PadicExp.exp_neg`, `TauCeti.PadicExp.exp_sub_of_commute`,
-  `TauCeti.PadicExp.exp_sub`: nonvanishing, absolute summability, and quotient identity on
+* `TauCeti.PadicExp.exp_sub_of_commute`, `TauCeti.PadicExp.exp_sub`: quotient identity on
   `{x | ‖x‖ < amiceRadius p 0}`.
 * `TauCeti.PadicExp.norm_exp_sub_one_sub_le`, `TauCeti.PadicExp.norm_exp_sub_exp`,
-  `TauCeti.PadicExp.exp_eq_one_iff`, `TauCeti.PadicExp.norm_exp_natCast_prime_sub_one`:
+  `TauCeti.PadicExp.norm_exp_sub_one_of_norm_lt`, `TauCeti.PadicExp.exp_eq_one_iff`,
+  `TauCeti.PadicExp.norm_exp_natCast_prime_sub_one`:
   quadratic remainder and full isometry properties on the disc of convergence.
 * `TauCeti.PadicExp.norm_natCast_prime_lt`,
   `TauCeti.PadicExp.not_summable_pow_div_factorial_of_le_norm`,
@@ -196,35 +192,12 @@ strictly inside the disc of convergence of `NormedSpace.exp`. -/
 theorem norm_natCast_prime_lt {A : Type*} [SeminormedRing A] [NormOneClass A]
     [NormedAlgebra ℚ_[p] A] (hp2 : p ≠ 2) :
     ‖(p : A)‖ < amiceRadius p 0 := by
-  rw [TauCeti.norm_natCast_eq_norm_padic (p := p) p, Padic.norm_p]
+  rw [TauCeti.norm_natCast_p]
   exact inv_lt_amiceRadius_zero_iff.mpr hp2
-
-section NormedAlgebra
-
-variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ_[p] A] [CompleteSpace A]
-
-/-- On the open disc of convergence in a nontrivial complete normed `ℚ_[p]`-algebra,
-`NormedSpace.exp x ≠ 0`. -/
-theorem exp_ne_zero [Nontrivial A] {x : A} (hx : ‖x‖ < amiceRadius p 0) :
-    NormedSpace.exp x ≠ 0 :=
-  (NormedSpace.isUnit_exp_of_mem_ball (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)).ne_zero
-
-end NormedAlgebra
 
 section DivisionAlgebra
 
 variable {D : Type*} [NormedDivisionRing D] [NormedAlgebra ℚ_[p] D]
-
-/-- For `‖x‖ < amiceRadius p 0`, the norms `‖x ^ n / n!‖` are summable. -/
-theorem summable_norm_pow_div_factorial {x : D} (hx : ‖x‖ < amiceRadius p 0) :
-    Summable fun n : ℕ ↦ ‖x ^ n / (n ! : D)‖ :=
-  NormedSpace.norm_expSeries_div_summable_of_mem_ball ℚ_[p] x
-    (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
-
-/-- On the open disc of convergence, `exp (-x) = (exp x)⁻¹`. -/
-theorem exp_neg [CompleteSpace D] {x : D} (hx : ‖x‖ < amiceRadius p 0) :
-    NormedSpace.exp (-x) = (NormedSpace.exp x)⁻¹ :=
-  NormedSpace.exp_neg_of_mem_ball ℚ_[p] (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
 
 /-- On the open disc of convergence in a complete normed division algebra over `ℚ_[p]`,
 `exp (x - y) = exp x / exp y` for commuting elements `x` and `y`. -/
@@ -236,7 +209,8 @@ theorem exp_sub_of_commute [CompleteSpace D] {x y : D} (hxy : Commute x y)
     NormedSpace.exp_add_of_commute_of_mem_ball hxy.neg_right
       (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
       (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hny),
-    exp_neg hy, div_eq_mul_inv]
+    NormedSpace.exp_neg_of_mem_ball ℚ_[p] (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hy),
+    div_eq_mul_inv]
 
 end DivisionAlgebra
 
@@ -320,21 +294,23 @@ theorem norm_exp_sub_exp {x y : A} (hx : ‖x‖ < amiceRadius p 0) (hy : ‖y�
       (x - y) + (NormedSpace.exp x - NormedSpace.exp y - (x - y)) := by abel
   rw [hdecomp, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hrem.ne', max_eq_left hrem.le]
 
+/-- **The `p`-adic exponential preserves norms on its disc.** For `‖x‖ < r₀`,
+`‖exp x - 1‖ = ‖x‖`: every term `xⁿ / n!` of degree `n ≥ 2` is strictly smaller than `x`. -/
+theorem norm_exp_sub_one_of_norm_lt {x : A} (hx : ‖x‖ < amiceRadius p 0) :
+    ‖NormedSpace.exp x - 1‖ = ‖x‖ := by
+  have h0 : ‖(0 : A)‖ < amiceRadius p 0 := by simpa using amiceRadius_pos (p := p) 0
+  simpa using norm_exp_sub_exp hx h0
+
 /-- On the open disc of convergence, `exp x = 1` if and only if `x = 0`. -/
 theorem exp_eq_one_iff {x : A} (hx : ‖x‖ < amiceRadius p 0) :
     NormedSpace.exp x = 1 ↔ x = 0 := by
-  have h0 : ‖(0 : A)‖ < amiceRadius p 0 := by simpa using amiceRadius_pos (p := p) 0
-  have hiso := norm_exp_sub_exp hx h0
-  simp only [NormedSpace.exp_zero, sub_zero] at hiso
-  rw [← sub_eq_zero, ← norm_eq_zero, hiso, norm_eq_zero]
+  rw [← sub_eq_zero, ← norm_eq_zero, norm_exp_sub_one_of_norm_lt hx, norm_eq_zero]
 
 /-- For every odd prime `p ≠ 2`, `‖exp p - 1‖ = p⁻¹` in any complete ultrametric normed algebra
 over `ℚ_[p]` with `‖(1 : A)‖ = 1`. -/
 theorem norm_exp_natCast_prime_sub_one [NormOneClass A] (hp2 : p ≠ 2) :
-    ‖NormedSpace.exp (p : A) - 1‖ = (p : ℝ)⁻¹ := by
-  have h0 : ‖(0 : A)‖ < amiceRadius p 0 := by simpa using amiceRadius_pos (p := p) 0
-  have hiso := norm_exp_sub_exp (norm_natCast_prime_lt hp2) h0
-  simpa [TauCeti.norm_natCast_eq_norm_padic (p := p) p, Padic.norm_p] using hiso
+    ‖NormedSpace.exp (p : A) - 1‖ = (p : ℝ)⁻¹ :=
+  (norm_exp_sub_one_of_norm_lt (norm_natCast_prime_lt hp2)).trans TauCeti.norm_natCast_p
 
 end UltrametricBanachAlgebra
 
@@ -392,7 +368,7 @@ theorem not_summable_two_pow_div_factorial {D : Type*} [NormedDivisionRing D]
     [NormedAlgebra ℚ_[2] D] :
     ¬ Summable fun n : ℕ ↦ (2 : D) ^ n / (n ! : D) := by
   refine not_summable_pow_div_factorial_of_le_norm (p := 2) ?_
-  rw [← Nat.cast_two (R := D), TauCeti.norm_natCast_eq_norm_padic (p := 2) 2, Padic.norm_p,
+  rw [← Nat.cast_two (R := D), TauCeti.norm_natCast_p (p := 2),
     ← amiceRadius_zero_pow_sub_one (p := 2)]
   norm_num
 

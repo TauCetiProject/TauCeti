@@ -31,7 +31,7 @@ series converges on the open disc `‖x‖ < r₀` of radius `r₀ = p ^ (-1 / (
 `‖y - 1‖ < 1` about `1`. On the disc of radius `r₀` the exponential preserves norms,
 `‖exp x - 1‖ = ‖x‖`, the logarithm preserves norms, `‖log y‖ = ‖y - 1‖`, and the two are inverse to
 each other. Hence the exponential maps the first disc bijectively onto the disc of radius `r₀` about
-`1`: it maps into it by `TauCeti.norm_exp_sub_one_of_norm_lt`, it is injective by
+`1`: it maps into it by `TauCeti.PadicExp.norm_exp_sub_one_of_norm_lt`, it is injective by
 `TauCeti.injOn_exp_ball` (via `TauCeti.log_exp_of_norm_lt`), and it is onto because
 `TauCeti.norm_log_of_norm_sub_one_lt` puts `log y` in the first disc and
 `TauCeti.exp_log_of_norm_sub_one_lt` gives `exp (log y) = y`.
@@ -74,7 +74,6 @@ disc `‖x‖ ≤ p ^ (-i)` of the least depth `i` with `1 < (p - 1) i`
   functional equation for commuting elements, with the commutative forms
   `TauCeti.exp_add_of_norm_lt`, `TauCeti.exp_sum_of_norm_lt`.
 * `TauCeti.exp_nsmul_of_norm_lt`, `TauCeti.exp_zsmul_of_norm_lt`: `exp (n • x) = exp x ^ n`.
-* `TauCeti.norm_exp_sub_one_of_norm_lt`: `‖exp x - 1‖ = ‖x‖`.
 * `TauCeti.norm_exp_of_norm_lt`: `‖exp x‖ = 1`.
 * `TauCeti.norm_neg_one_pow_div_natCast_smul_pow_le`: the corresponding bound for the logarithm
   series.
@@ -229,20 +228,11 @@ private theorem norm_eq_of_hasSum {t : ℕ → A} {s z : A} (hs : HasSum t s) (h
   rw [← sub_add_cancel s z, add_comm, IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hlt.ne',
     max_eq_left hlt.le]
 
-/-- **The `p`-adic exponential preserves norms on its disc.** For `‖x‖ < r₀`,
-`‖exp x - 1‖ = ‖x‖`: every term `xⁿ / n!` of degree `n ≥ 2` is strictly smaller than `x`. -/
-theorem norm_exp_sub_one_of_norm_lt {x : A} (hx : ‖x‖ < amiceRadius p 0) :
-    ‖exp x - 1‖ = ‖x‖ :=
-  norm_eq_of_hasSum (hasSum_exp_sub_one hx) (by simp)
-    (by simp [PowerSeries.coeff_exp_sub_one_of_ne_zero]) hx fun n ↦ by
-      simpa using norm_smul_pow_le_of_norm_mul_le x (n := n + 2) (by omega)
-        (norm_coeff_exp_sub_one_mul_le (n + 2))
-
 /-- For `‖x‖ < r₀`, the exponential `exp x` has norm one. -/
 theorem norm_exp_of_norm_lt [NormOneClass A] {x : A} (hx : ‖x‖ < amiceRadius p 0) :
     ‖exp x‖ = 1 := by
   refine norm_eq_one_of_norm_one_sub_lt_one ?_
-  rw [norm_sub_rev, norm_exp_sub_one_of_norm_lt hx]
+  rw [norm_sub_rev, PadicExp.norm_exp_sub_one_of_norm_lt hx]
   exact hx.trans (amiceRadius_lt_one 0)
 
 /-- The series of `log y` on the open unit disc about `1`, with the coefficients of the formal
@@ -263,7 +253,7 @@ theorem norm_log_of_norm_sub_one_lt {y : A} (hy : ‖y - 1‖ < amiceRadius p 0)
 /-- **The logarithm inverts the exponential on its disc.** For `‖x‖ < r₀`, `log (exp x) = x`. -/
 theorem log_exp_of_norm_lt {x : A} (hx : ‖x‖ < amiceRadius p 0) : log (exp x) = x := by
   have hy : ‖exp x - 1‖ < 1 := by
-    rw [norm_exp_sub_one_of_norm_lt hx]
+    rw [PadicExp.norm_exp_sub_one_of_norm_lt hx]
     exact hx.trans (amiceRadius_lt_one 0)
   exact PowerSeries.eq_of_hasSum_of_subst_eq_X (by simp)
     (PowerSeries.subst_log_exp_sub_one ℚ_[p])
@@ -379,7 +369,7 @@ theorem norm_addChar_of_value_at_one_sub_one [Algebra ℤ_[p] A] [IsBoundedSMul 
       (tendsto_pow_atTop_nhds_zero_of_norm_lt_one (ht.trans (amiceRadius_lt_one 0))) x - 1‖ =
       ‖x‖ * ‖t‖ := by
   rw [addChar_of_value_at_one_eq_exp_smul_log ht x,
-    norm_exp_sub_one_of_norm_lt (norm_coe_smul_log_one_add_lt ht x), norm_smul,
+    PadicExp.norm_exp_sub_one_of_norm_lt (norm_coe_smul_log_one_add_lt ht x), norm_smul,
     norm_log_one_add_of_norm_lt ht, PadicInt.norm_def]
 
 end NormedRing

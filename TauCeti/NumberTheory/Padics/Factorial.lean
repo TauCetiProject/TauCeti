@@ -58,8 +58,7 @@ factorial and inverse-factorial norm bounds in any normed algebra or normed divi
 * `TauCeti.norm_inv_factorial_le`, `TauCeti.norm_inv_factorial_le_rpow_sub_one_div`,
   `TauCeti.norm_inv_factorial_pow_prime`, `TauCeti.norm_inv_factorial_pow_prime_mul_rpow`,
   `TauCeti.le_norm_inv_factorial_pow_prime_mul_pow`,
-  `TauCeti.norm_inv_factorial_mul_pow_le`, `TauCeti.norm_pow_div_le_of_le_norm`,
-  `TauCeti.norm_pow_div_factorial_le`:
+  `TauCeti.norm_inv_factorial_mul_pow_le`:
   inverse-factorial and critical-radius estimates in any normed division algebra over `ℚ_[p]`.
 
 ## Provenance
@@ -288,15 +287,6 @@ namespace TauCeti
 
 open scoped Nat
 
-/-- If `0 < r` and `r ^ (n - 1) ≤ ‖c‖`, then `‖xⁿ / c‖ ≤ ‖x‖ (‖x‖ / r) ^ (n - 1)` for `n ≠ 0`. -/
-theorem norm_pow_div_le_of_le_norm {D : Type*} [NormedDivisionRing D] (x : D) {c : D} {r : ℝ}
-    (hr : 0 < r) {n : ℕ} (hn : n ≠ 0) (hc : r ^ (n - 1) ≤ ‖c‖) :
-    ‖x ^ n / c‖ ≤ ‖x‖ * (‖x‖ / r) ^ (n - 1) := by
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Nat.add_sub_cancel] at hc ⊢
-  rw [norm_div, norm_pow, div_pow, _root_.pow_succ', ← mul_div_assoc]
-  exact div_le_div_of_nonneg_left (by positivity) (pow_pos hr _) hc
-
 section NormedAlgebra
 
 variable {p : ℕ} [hp : Fact p.Prime] {K : Type*} [SeminormedRing K] [NormOneClass K]
@@ -390,14 +380,6 @@ theorem norm_inv_factorial_mul_pow_le {r : ℝ} (hr0 : 0 ≤ r)
     _ = 1 := by
           have hexp : (n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ) = 0 := by ring
           rw [hexp, Real.rpow_zero]
-
-/-- **The terms of the exponential series on its disc.** For `n ≠ 0`,
-`‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)`. When `‖x‖ < r₀` the terms decay geometrically, and every
-term of degree at least two is strictly smaller than a nonzero `x`. -/
-theorem norm_pow_div_factorial_le (x : D) {n : ℕ} (hn : n ≠ 0) :
-    ‖x ^ n / (n ! : D)‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) :=
-  norm_pow_div_le_of_le_norm x (amiceRadius_pos 0) hn
-    (amiceRadius_zero_pow_sub_one_le_norm_factorial hn)
 
 end NormedDivisionRing
 

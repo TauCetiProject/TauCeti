@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Eval.Defs
-public import Mathlib.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.Padics.PadicNumbers
@@ -15,11 +14,12 @@ public import TauCeti.RingTheory.PowerSeries.Exp.Derivative
 import Mathlib.Algebra.Algebra.Rat
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import TauCeti.NumberTheory.Padics.Exp.Basic
+import TauCeti.RingTheory.PowerSeries.Exp.Eval
 import TauCeti.RingTheory.PowerSeries.Exp.Padic.Basic
 import TauCeti.RingTheory.PowerSeries.GaussNorm
 
 /-!
-# Exponential polynomials over `p`-adic algebras and fields
+# Exponential polynomials over `p`-adic algebras
 
 In an ultrametric seminormed commutative `ℚ_[p]`-algebra `A` with `‖(1 : A)‖ = 1` (retaining its
 rational algebra structure `[Algebra ℚ A]` used by `PowerSeries.exp`), an exponential polynomial
@@ -33,15 +33,12 @@ any `r`-weighted bound `∀ j, ‖Q.coeff j‖ * r ^ j ≤ M`
 (`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`).
 
 When `A` is a complete normed commutative `ℚ_[p]`-algebra with `[Algebra ℚ A]` and
-`‖ψ * x‖ < p ^ (-1 / (p - 1))`, the Cauchy product of the finitely supported polynomial terms
-`Q.coeff i * x ^ i` with the exponential terms `(j !⁻¹ : ℚ_[p]) • (ψ * x) ^ j` shows that
-`(Q : PowerSeries A) * rescale ψ (exp A)` converges at `x` to `Q.eval x * NormedSpace.exp (ψ * x)`
-(`PowerSeries.hasSum_coeff_coe_mul_rescale_exp`), and its `m`-th formal derivative converges to
+`‖ψ * x‖ < p ^ (-1 / (p - 1))`, the Cauchy product via `PowerSeries.evalAt_mul_of_summable_norm`
+shows that `(Q : PowerSeries A) * rescale ψ (exp A)` converges at `x` to
+`Q.eval x * NormedSpace.exp (ψ * x)` (`PowerSeries.hasSum_coeff_coe_mul_rescale_exp`), and its
+`m`-th formal derivative converges to
 `(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`
-(`PowerSeries.hasSum_coeff_iterate_derivative_coe_mul_rescale_exp`). Over a complete normed field
-`L` over `ℚ_[p]`, `FormalMultilinearSeries.ofScalarsSum` gives the corresponding evaluation lemmas
-(`PowerSeries.ofScalarsSum_coeff_coe_mul_rescale_exp`,
-`PowerSeries.ofScalarsSum_coeff_iterate_derivative_coe_mul_rescale_exp`).
+(`PowerSeries.hasSum_coeff_iterate_derivative_coe_mul_rescale_exp`).
 
 ## Main results
 
@@ -52,9 +49,6 @@ When `A` is a complete normed commutative `ℚ_[p]`-algebra with `[Algebra ℚ A
   `PowerSeries.hasSum_coeff_iterate_derivative_coe_mul_rescale_exp`: for
   `‖ψ * x‖ < p ^ (-(p - 1)⁻¹)` in complete `A`, `∑ coeff k (Q(X) exp(ψ X)) * x ^ k` sums to
   `Q.eval x * NormedSpace.exp (ψ * x)` (and analogously for the `m`-th formal derivative).
-* `PowerSeries.ofScalarsSum_coeff_coe_mul_rescale_exp`,
-  `PowerSeries.ofScalarsSum_coeff_iterate_derivative_coe_mul_rescale_exp`: evaluation via
-  `FormalMultilinearSeries.ofScalarsSum` for `Q(X) exp(ψ X)` and its `m`-th formal derivative.
 
 ## References
 
@@ -130,42 +124,30 @@ theorem hasSum_coeff_coe_mul_rescale_exp (Q : A[X]) {ψ x : A}
     (h : ‖ψ * x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
     HasSum (fun k => coeff k ((Q : PowerSeries A) * rescale ψ (exp A)) * x ^ k)
       (Q.eval x * NormedSpace.exp (ψ * x)) := by
-  let f : ℕ → A := fun i => Q.coeff i * x ^ i
-  let g : ℕ → A := fun j => (j.factorial⁻¹ : ℚ_[p]) • (ψ * x) ^ j
-  have hf_supp : ∀ i ∉ Finset.range (Q.natDegree + 1), f i = 0 := fun i hi => by
-    simp only [Finset.mem_range, not_lt] at hi
-    simp [f, Polynomial.coeff_eq_zero_of_natDegree_lt hi]
-  have hf_sum : HasSum f (Q.eval x) := by
-    rw [Polynomial.eval_eq_sum_range]
-    exact hasSum_sum_of_ne_finset_zero hf_supp
-  have hf_norm : Summable fun i => ‖f i‖ :=
+  have hf_norm : Summable fun i => ‖coeff i (Q : PowerSeries A) • x ^ i‖ :=
     summable_of_ne_finset_zero (s := Finset.range (Q.natDegree + 1)) fun i hi => by
-      simp [hf_supp i hi]
+      simp only [Finset.mem_range, not_lt] at hi
+      simp [Polynomial.coeff_eq_zero_of_natDegree_lt hi]
   have hmem : ψ * x ∈ Metric.eball (0 : A) (NormedSpace.expSeries ℚ_[p] A).radius :=
     TauCeti.PadicExp.mem_eball_expSeries_of_norm_lt (K := ℚ_[p])
       (by simpa [TauCeti.amiceRadius_zero] using h)
-  have hg_sum : HasSum g (NormedSpace.exp (ψ * x)) :=
-    NormedSpace.expSeries_hasSum_exp_of_mem_ball' (ψ * x) hmem
-  have hg_norm : Summable fun j => ‖g j‖ :=
-    NormedSpace.norm_expSeries_summable_of_mem_ball' (ψ * x) hmem
-  have hterm (k : ℕ) :
-      ∑ ij ∈ Finset.antidiagonal k, f ij.1 * g ij.2 =
-        coeff k ((Q : PowerSeries A) * rescale ψ (exp A)) * x ^ k := by
-    rw [coeff_mul, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun ij hij => ?_
-    have hk : ij.1 + ij.2 = k := Finset.mem_antidiagonal.mp hij
-    simp only [f, g, Polynomial.coeff_coe, coeff_rescale, coeff_exp,
+  have hg_norm : Summable fun j => ‖coeff j (rescale ψ (exp A)) • x ^ j‖ := by
+    refine (NormedSpace.norm_expSeries_summable_of_mem_ball' (ψ * x) hmem).congr fun j => ?_
+    apply congrArg norm
+    simp only [coeff_rescale, coeff_exp, smul_eq_mul,
       ← RingHom.map_rat_algebraMap (algebraMap ℚ_[p] A), Algebra.smul_def, map_inv₀,
       map_natCast, one_div, mul_pow]
-    rw [← hk, pow_add]
     ring
-  have hprod : Summable fun k => ∑ ij ∈ Finset.antidiagonal k, f ij.1 * g ij.2 :=
-    summable_sum_mul_antidiagonal_of_summable_norm' hf_norm hf_sum.summable hg_norm hg_sum.summable
-  have htsum : Q.eval x * NormedSpace.exp (ψ * x) =
-      ∑' k, ∑ ij ∈ Finset.antidiagonal k, f ij.1 * g ij.2 := by
-    rw [← hf_sum.tsum_eq, ← hg_sum.tsum_eq]
-    exact tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm hf_norm hg_norm
-  simpa only [hterm, htsum] using hprod.hasSum
+  have hmul : Summable fun k => ‖coeff k ((Q : PowerSeries A) * rescale ψ (exp A)) • x ^ k‖ := by
+    refine (summable_norm_sum_mul_antidiagonal_of_summable_norm hf_norm hg_norm).congr fun k => ?_
+    apply congrArg norm
+    rw [coeff_mul, Finset.sum_smul]
+    exact Finset.sum_congr rfl fun p hp => by
+      rw [← Finset.mem_antidiagonal.mp hp, pow_add, smul_mul_smul_comm]
+  have hsum := hasSum_evalAt_of_summable_norm hmul
+  rw [evalAt_mul_of_summable_norm hf_norm hg_norm, evalAt_coe, Polynomial.coe_aeval_eq_eval,
+    evalAt_rescale, smul_eq_mul, evalAt_exp] at hsum
+  simpa only [smul_eq_mul] using hsum
 
 /-- Inside `‖ψ * x‖ < p ^ (-1 / (p - 1))`, the `m`-th formal derivative of `Q(X) exp(ψ X)`
 converges at `x` to `(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`. -/
@@ -177,33 +159,5 @@ theorem hasSum_coeff_iterate_derivative_coe_mul_rescale_exp (Q : A[X]) {ψ x : A
   exact hasSum_coeff_coe_mul_rescale_exp (Polynomial.expDerivFactor ψ m Q) h
 
 end NormedCommRing
-
-section NormedField
-
--- Retain the caller's rational algebra structure, which occurs in `PowerSeries.exp`.
-variable {L : Type*} [NormedField L] [Algebra ℚ L] [NormedAlgebra ℚ_[p] L]
-
-/-- Evaluating `Q(X) exp(ψ X)` via `FormalMultilinearSeries.ofScalarsSum` at `x` with
-`‖ψ * x‖ < p ^ (-1 / (p - 1))` gives `Q.eval x * NormedSpace.exp (ψ * x)`. -/
-theorem ofScalarsSum_coeff_coe_mul_rescale_exp [CompleteSpace L] (Q : L[X]) {ψ x : L}
-    (h : ‖ψ * x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
-    FormalMultilinearSeries.ofScalarsSum (E := L)
-        (fun k => coeff k ((Q : PowerSeries L) * rescale ψ (exp L))) x =
-      Q.eval x * NormedSpace.exp (ψ * x) := by
-  rw [FormalMultilinearSeries.ofScalars_sum_eq]
-  simpa only [smul_eq_mul] using (hasSum_coeff_coe_mul_rescale_exp Q h).tsum_eq
-
-/-- Evaluating the `m`-th formal derivative of `Q(X) exp(ψ X)` via
-`FormalMultilinearSeries.ofScalarsSum` at `x` with `‖ψ * x‖ < p ^ (-1 / (p - 1))` gives
-`(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`. -/
-theorem ofScalarsSum_coeff_iterate_derivative_coe_mul_rescale_exp [CompleteSpace L]
-    (Q : L[X]) {ψ x : L} (m : ℕ) (h : ‖ψ * x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
-    FormalMultilinearSeries.ofScalarsSum (E := L)
-        (fun k => coeff k ((d⁄dX)^[m] ((Q : PowerSeries L) * rescale ψ (exp L)))) x =
-      (Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x) := by
-  simp_rw [iterate_derivative_coe_mul_rescale_exp]
-  exact ofScalarsSum_coeff_coe_mul_rescale_exp (Polynomial.expDerivFactor ψ m Q) h
-
-end NormedField
 
 end PowerSeries

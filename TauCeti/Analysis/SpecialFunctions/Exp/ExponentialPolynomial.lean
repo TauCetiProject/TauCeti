@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Algebra.Polynomial.Roots
+import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.Analysis.Calculus.LocalExtr.Rolle
 import TauCeti.LinearAlgebra.Vandermonde
 
@@ -151,9 +152,12 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
       fun x ↦ by simp only [F, sum_cons, hDa, eval_zero, zero_mul, zero_add]
     have hlt := ih (γ := δ) (fun i hi j hj h ↦ hγ' hi hj (sub_left_inj.1 h))
       (p := fun i ↦ expDerivFactor (δ i) N (p i))
-      (fun i hi ↦ (expDerivFactor_eq_zero_iff (hδ i hi) N (p i)).not.2 (hp.2 i hi))
+      (fun i hi ↦ by
+        rw [expDerivFactor_eq_iterate]
+        exact (iterate_derivative_add_C_mul_eq_zero_iff (hδ i hi) N).not.2 (hp.2 i hi))
       (fun x hx ↦ (hFN x).symm.trans (hZ' x hx))
-    rw [sum_congr rfl fun i hi ↦ by rw [natDegree_expDerivFactor (hδ i hi) N]] at hlt
+    rw [sum_congr rfl fun i hi ↦ by
+      rw [expDerivFactor_eq_iterate, natDegree_iterate_derivative_add_C_mul (hδ i hi) N]] at hlt
     rw [sum_cons]
     omega
 
@@ -290,7 +294,8 @@ theorem eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn {ι : Type*} {s : Finset �
     have ht : ∀ i ∈ t, p i = 0 := fun i hi ↦ by
       have hδ : δ i ≠ 0 := fun h0 ↦
         hat (hγ (mem_cons_of_mem hi) (mem_cons_self a t) (sub_eq_zero.1 h0) ▸ hi)
-      exact (expDerivFactor_eq_zero_iff hδ N (p i)).1 (ih hγ' hN i hi)
+      exact (iterate_derivative_add_C_mul_eq_zero_iff hδ N).1
+        (expDerivFactor_eq_iterate (δ i) N (p i) ▸ ih hγ' hN i hi)
     have hpa : p a = 0 := by
       apply (p a).eq_zero_of_infinite_isRoot
       refine Set.infinite_univ.mono fun z _ ↦ ?_
