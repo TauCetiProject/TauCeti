@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Coeff
+public import Mathlib.Algebra.MvPolynomial.Eval
 
 /-!
 # Coefficients of multivariate polynomials
@@ -25,6 +26,9 @@ linear coefficient of a univariate power series (`PowerSeries.coeff_one_mul`).
 A linear operator that acts diagonally on the monomials, `X ^ m ↦ w m • X ^ m`, acts on the
 coefficients by the same scalars.
 
+Every integer multivariate polynomial is the difference of two multivariate polynomials with
+natural-number coefficients (`MvPolynomial.exists_map_nat_sub_map_nat_eq`).
+
 ## Main results
 
 * `MvPolynomial.coeff_sum_linearCombination_X_pow_of_fintype`: the coefficients of a power sum of
@@ -37,11 +41,32 @@ coefficients by the same scalars.
   `pᵢ q(0) + p(0) qᵢ`.
 * `MvPolynomial.coeff_apply_eq_mul_of_apply_monomial`: an operator multiplying each monomial
   `X ^ m` by `w m` multiplies the coefficient of `X ^ m` by `w m`.
+* `MvPolynomial.exists_map_nat_sub_map_nat_eq`: every integer multivariate polynomial is the
+  difference of two multivariate polynomials with natural-number coefficients.
 -/
 
 public section
 
 namespace MvPolynomial
+
+section
+
+variable {σ : Type*}
+
+/-- Every integer multivariate polynomial is the difference of two multivariate polynomials with
+natural-number coefficients. -/
+theorem exists_map_nat_sub_map_nat_eq (f : MvPolynomial σ ℤ) :
+    ∃ p q : MvPolynomial σ ℕ,
+      MvPolynomial.map (Nat.castRingHom ℤ) p - MvPolynomial.map (Nat.castRingHom ℤ) q = f := by
+  refine ⟨∑ m ∈ f.support, MvPolynomial.monomial m (f.coeff m).toNat,
+    ∑ m ∈ f.support, MvPolynomial.monomial m (-(f.coeff m)).toNat, ?_⟩
+  simp only [map_sum, MvPolynomial.map_monomial, ← Finset.sum_sub_distrib, ← map_sub]
+  conv_rhs => rw [f.as_sum]
+  refine Finset.sum_congr rfl fun m _ => congrArg (MvPolynomial.monomial m) ?_
+  simp only [eq_natCast]
+  omega
+
+end
 
 variable {R σ ι : Type*} [CommSemiring R] {p : MvPolynomial σ R}
 

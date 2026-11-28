@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Control.Reachable
-import Mathlib.LinearAlgebra.Matrix.Charpoly.Univ
+import TauCeti.LinearAlgebra.Matrix.Charpoly.CayleyHamilton
 
 /-!
 # The unobservable subspace, observability and duality
@@ -17,9 +17,10 @@ linear time-invariant system `x(k+1) = A x(k)`, `y(k) = C x(k)` (or `x' = A x`, 
 states whose free output vanishes at every time. It is the largest `A`-invariant submodule of
 `n → R` contained in `ker C`, and the pair `(A, C)` is *observable* when it is `⊥`.
 
-By the Cayley–Hamilton theorem (transferred via universal multivariate polynomials to any
-commutative semiring), the powers `A ^ k` with `k ≥ Fintype.card n` add no further constraints, so
-the unobservable subspace is already the kernel of `(ctrbMatrix Aᵀ Cᵀ)ᵀ`. Over a commutative
+By `Matrix.exists_pow_card_add_sum_eq_sum`, the Cayley–Hamilton theorem (transferred via universal
+multivariate polynomials to any commutative semiring) shows that powers `A ^ k` with
+`k ≥ Fintype.card n` add no further constraints, so the unobservable subspace is already the kernel
+of `(ctrbMatrix Aᵀ Cᵀ)ᵀ`. Over a commutative
 ring this identifies observability with injectivity of the finite-horizon output map
 `x ↦ (k ↦ (C * A ^ k) *ᵥ x)` for `k < Fintype.card n`; over a field, rank–nullity and
 `Matrix.rank_transpose` yield Kalman duality: `(A, C)` is observable if and only if `(Aᵀ, Cᵀ)`
@@ -127,70 +128,6 @@ theorem unobservableSubspace_eq_top_of_isEmpty [IsEmpty p] : unobservableSubspac
 @[simp]
 theorem isObservable_of_isEmpty [IsEmpty n] : IsObservable A C :=
   (isObservable_iff A C).2 (Subsingleton.elim _ _)
-
-/-- Every integer multivariate polynomial is the difference of two multivariate polynomials with
-natural-number coefficients. -/
-private theorem exists_mvPolynomial_map_nat_sub {σ : Type*} (f : MvPolynomial σ ℤ) :
-    ∃ p q : MvPolynomial σ ℕ,
-      MvPolynomial.map (Nat.castRingHom ℤ) p - MvPolynomial.map (Nat.castRingHom ℤ) q = f := by
-  refine ⟨∑ m ∈ f.support, MvPolynomial.monomial m (f.coeff m).toNat,
-    ∑ m ∈ f.support, MvPolynomial.monomial m (-(f.coeff m)).toNat, ?_⟩
-  simp only [map_sum, MvPolynomial.map_monomial, ← Finset.sum_sub_distrib, ← map_sub]
-  conv_rhs => rw [f.as_sum]
-  refine Finset.sum_congr rfl fun m _ => congrArg (MvPolynomial.monomial m) ?_
-  simp only [eq_natCast]
-  omega
-
-/-- Positive-negative Cayley–Hamilton identity over any commutative semiring, obtained by
-splitting the integer coefficients of the universal characteristic polynomial and evaluating at
-`A`. -/
-private theorem exists_pow_card_add_sum_eq_sum (A : Matrix n n R) :
-    ∃ c₁ c₂ : Fin (Fintype.card n) → R,
-      A ^ Fintype.card n + ∑ j : Fin (Fintype.card n), c₁ j • A ^ (j : ℕ) =
-        ∑ j : Fin (Fintype.card n), c₂ j • A ^ (j : ℕ) := by
-  let ι : MvPolynomial (n × n) ℕ →+* MvPolynomial (n × n) ℤ :=
-    MvPolynomial.map (Nat.castRingHom ℤ)
-  let M₀ := mvPolynomialX n n ℕ
-  let M := mvPolynomialX n n ℤ
-  have hM : ι.mapMatrix M₀ = M :=
-    Matrix.ext fun i j => by simp [ι, M₀, M, mvPolynomialX_apply]
-  choose p₁ p₂ hp using fun j : Fin (Fintype.card n) =>
-    exists_mvPolynomial_map_nat_sub (M.charpoly.coeff j)
-  have hCH : M ^ Fintype.card n + ∑ j : Fin (Fintype.card n), ι (p₁ j) • M ^ (j : ℕ) =
-      ∑ j : Fin (Fintype.card n), ι (p₂ j) • M ^ (j : ℕ) := by
-    have h0 := M.aeval_self_charpoly
-    have hdeg : M.charpoly.natDegree < Fintype.card n + 1 := by
-      rw [M.charpoly_natDegree_eq_dim]
-      exact Nat.lt_succ_self _
-    rw [Polynomial.aeval_eq_sum_range' hdeg, Finset.sum_range_succ,
-      Matrix.charpoly.univ_coeff_card, one_smul, ← Fin.sum_univ_eq_sum_range] at h0
-    have hsub : M ^ Fintype.card n +
-        ∑ j : Fin (Fintype.card n), (ι (p₁ j) - ι (p₂ j)) • M ^ (j : ℕ) = 0 := by
-      simpa only [ι, hp, add_comm] using h0
-    simp only [sub_smul, Finset.sum_sub_distrib, ← add_sub_assoc] at hsub
-    exact sub_eq_zero.1 hsub
-  have hsmul_ι (a : MvPolynomial (n × n) ℕ) (X : Matrix n n (MvPolynomial (n × n) ℕ)) :
-      ι.mapMatrix (a • X) = ι a • ι.mapMatrix X :=
-    Matrix.ext fun i j => by simp [RingHom.mapMatrix_apply]
-  have hnat : M₀ ^ Fintype.card n + ∑ j : Fin (Fintype.card n), p₁ j • M₀ ^ (j : ℕ) =
-      ∑ j : Fin (Fintype.card n), p₂ j • M₀ ^ (j : ℕ) := by
-    have hEq :
-        ι.mapMatrix (M₀ ^ Fintype.card n +
-          ∑ j : Fin (Fintype.card n), p₁ j • M₀ ^ (j : ℕ)) =
-          ι.mapMatrix (∑ j : Fin (Fintype.card n), p₂ j • M₀ ^ (j : ℕ)) := by
-      simpa only [map_add, map_sum, map_pow, hsmul_ι, hM] using hCH
-    refine Matrix.ext fun i j =>
-      MvPolynomial.map_injective (Nat.castRingHom ℤ) Nat.cast_injective ?_
-    simpa only [RingHom.mapMatrix_apply, Matrix.map_apply] using
-      congrArg (fun X : Matrix n n _ => X i j) hEq
-  let ev : MvPolynomial (n × n) ℕ →+* R :=
-    MvPolynomial.eval₂Hom (Nat.castRingHom R) fun q => A q.1 q.2
-  have hsmul_ev (a : MvPolynomial (n × n) ℕ) (X : Matrix n n (MvPolynomial (n × n) ℕ)) :
-      ev.mapMatrix (a • X) = ev a • ev.mapMatrix X :=
-    Matrix.ext fun i j => by simp [RingHom.mapMatrix_apply]
-  refine ⟨fun j => ev (p₁ j), fun j => ev (p₂ j), ?_⟩
-  have hev : ev.mapMatrix M₀ = A := mvPolynomialX_map_eval₂ _ A
-  simpa only [map_add, map_sum, map_pow, hsmul_ev, hev] using congrArg ev.mapMatrix hnat
 
 /-- Entrywise identification of `(ctrbMatrix Aᵀ Cᵀ)ᵀ *ᵥ x` with the free outputs
 `(C * A ^ k) *ᵥ x`. -/
