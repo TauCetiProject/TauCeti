@@ -27,7 +27,7 @@ open scoped TensorProduct ComplexConjugate
 namespace TauCeti.HermitianMetric
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-  {E : Type*} [AddCommGroup E] [Module (𝓞 K) E] [Module.Finite (𝓞 K) E]
+  {E : Type*} [AddCommGroup E] [Module (𝓞 K) E]
   (h : HermitianMetric K E)
 
 private theorem exteriorPower_baseChange_form_one_tmul (n : ℕ) (τ : L →+* ℂ)
