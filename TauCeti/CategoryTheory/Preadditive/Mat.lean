@@ -36,11 +36,13 @@ independent object and morphism universes.
 * `CategoryTheory.Mat_.isoOfEquiv_refl`, `CategoryTheory.Mat_.isoOfEquiv_trans`,
   `CategoryTheory.Mat_.isoOfEquiv_symm`: monomial isomorphisms over the identity, a composite and
   an inverse equivalence.
-* `CategoryTheory.Mat_.liftToBiproducts`: the extension of an additive functor to matrices.
-* `CategoryTheory.Mat_.embeddingLiftToBiproductsIso`: the restriction of the extension to
+* `CategoryTheory.Functor.liftToBiproducts`: the extension of an additive functor to matrices.
+* `CategoryTheory.Functor.embeddingLiftToBiproductsIso`: the restriction of the extension to
   one-term families recovers the original functor.
-* `CategoryTheory.Mat_.fullyFaithfulLiftToBiproducts`: the extension of a fully faithful
+* `CategoryTheory.Functor.FullyFaithful.liftToBiproducts`: the extension of a fully faithful
   additive functor is fully faithful.
+* `CategoryTheory.Functor.liftToBiproductsUnique`: comparison with any additive extension
+  equipped with a restriction isomorphism.
 
 The file also records the entries of the zero matrix (`Mat_.zero_apply`) and of the one-by-one
 matrices `(Mat_.embedding C).map f` (`Mat_.embedding_map_apply`), with the indices typed as those of
@@ -186,90 +188,6 @@ theorem isoOfEquiv_symm (e : M.ι ≃ N.ι) (φ : ∀ i, M.X i ≅ N.X (e i)) :
     simp [isoOfEquiv_hom_apply, isoOfEquiv_inv_apply]
   · simp [isoOfEquiv_hom_apply, isoOfEquiv_inv_apply, h, e.symm_apply_eq, Ne.symm h]
 
-section Lift
-
-open Limits
-
-variable {E : Type*} [Category* E] [Preadditive E] [HasFiniteBiproducts E]
-
-/-- Extend an additive functor to matrices by taking biproducts. This version of `Mat_.lift`
-allows the source and target to have independent object and morphism universes. -/
-@[expose]
-def liftToBiproducts (F : C ⥤ E) [F.Additive] : Mat_ C ⥤ E where
-  obj X := ⨁ fun i ↦ F.obj (X.X i)
-  map f := biproduct.matrix fun i j ↦ F.map (f i j)
-  map_id X := by
-    ext i j : 2
-    by_cases h : i = j
-    · subst j
-      simp
-    · simp [Mat_.id_apply_of_ne _ _ _ (Ne.symm h), biproduct.ι_π_ne _ (Ne.symm h)]
-  map_comp f g := by
-    ext i j : 2
-    simp [biproduct.lift_desc, ← Functor.map_comp]
-
-@[simp]
-theorem liftToBiproducts_obj (F : C ⥤ E) [F.Additive] (X : Mat_ C) :
-    (liftToBiproducts F).obj X = ⨁ fun i ↦ F.obj (X.X i) := (rfl)
-
-@[simp]
-theorem liftToBiproducts_map (F : C ⥤ E) [F.Additive] {X Y : Mat_ C} (f : X ⟶ Y) :
-    (liftToBiproducts F).map f =
-      biproduct.matrix (fun i j ↦ F.map (f i j)) := (rfl)
-
-instance (F : C ⥤ E) [F.Additive] : (liftToBiproducts F).Additive where
-  map_add {_ _ f g} := by
-    have h :
-        biproduct.matrix (fun i j ↦ F.map (f i j) + F.map (g i j)) =
-          biproduct.matrix (fun i j ↦ F.map (f i j)) +
-            biproduct.matrix (fun i j ↦ F.map (g i j)) := by
-      ext i j : 2
-      simp [Preadditive.add_comp, Preadditive.comp_add]
-    simpa only [liftToBiproducts_map, Mat_.add_apply, Functor.map_add] using! h
-
-/-- Restricting the biproduct extension along the embedding as one-term families recovers
-the original additive functor. -/
-def embeddingLiftToBiproductsIso (F : C ⥤ E) [F.Additive] :
-    embedding C ⋙ liftToBiproducts F ≅ F :=
-  NatIso.ofComponents
-    (fun X ↦ biproductUniqueIso (fun _ : PUnit ↦ F.obj X))
-    (fun {X Y} f ↦ by
-      rw [Functor.comp_map, liftToBiproducts_map]
-      let A : PUnit → E := fun _ ↦ F.obj X
-      let B : PUnit → E := fun _ ↦ F.obj Y
-      -- The embedding uses the constant family on `PUnit`.
-      change biproduct.matrix (f := A) (g := B) (fun _ _ ↦ F.map f) ≫ (biproductUniqueIso B).hom =
-        (biproductUniqueIso A).hom ≫ F.map f
-      apply biproduct.hom_ext'
-      intro i
-      simp [A, B, biproductUniqueIso_hom, limitBiconeOfUnique, biproduct.lift_desc])
-
-@[simp]
-theorem embeddingLiftToBiproductsIso_hom_app (F : C ⥤ E) [F.Additive] (X : C) :
-    (embeddingLiftToBiproductsIso F).hom.app X =
-      (biproductUniqueIso (fun _ : PUnit ↦ F.obj X)).hom := (rfl)
-
-@[simp]
-theorem embeddingLiftToBiproductsIso_inv_app (F : C ⥤ E) [F.Additive] (X : C) :
-    (embeddingLiftToBiproductsIso F).inv.app X =
-      (biproductUniqueIso (fun _ : PUnit ↦ F.obj X)).inv := (rfl)
-
-/-- The extension of a fully faithful additive functor to the category of matrices is fully
-faithful. The inverse on morphisms takes the preimage of each matrix component. -/
-def fullyFaithfulLiftToBiproducts {F : C ⥤ E} [F.Additive] (hF : F.FullyFaithful) :
-    (liftToBiproducts F).FullyFaithful where
-  preimage f i j := hF.preimage (biproduct.components f i j)
-  map_preimage {X Y} f := by
-    -- Give `biproduct.components` the biproduct families in the type of `f`.
-    change (⨁ fun i ↦ F.obj (X.X i)) ⟶ (⨁ fun j ↦ F.obj (Y.X j)) at f
-    refine (liftToBiproducts_map F (fun i j ↦ hF.preimage (biproduct.components f i j))).trans ?_
-    simpa only [hF.map_preimage] using! biproduct.components_matrix f
-  preimage_map f := by
-    funext i j
-    simp only [liftToBiproducts_map, biproduct.matrix_components, hF.preimage_map]
-
-end Lift
-
 section Ext
 
 open Limits
@@ -297,3 +215,245 @@ theorem ext_hom_app {G G' : Mat_ C ⥤ E} [G.Additive] [G'.Additive]
 end Ext
 
 end CategoryTheory.Mat_
+
+namespace CategoryTheory.Functor
+
+open Limits
+
+variable {C E : Type*} [Category* C] [Preadditive C]
+  [Category* E] [Preadditive E] [HasFiniteBiproducts E]
+
+/-- Extend an additive functor to matrices by taking biproducts. This version of `Mat_.lift`
+allows the source and target to have independent object and morphism universes. -/
+def liftToBiproducts (F : C ⥤ E) [F.Additive] : Mat_ C ⥤ E where
+  obj X := ⨁ fun i ↦ F.obj (X.X i)
+  map f := biproduct.matrix fun i j ↦ F.map (f i j)
+  map_id X := by
+    ext i j : 2
+    by_cases h : i = j
+    · subst j
+      simp
+    · simp [Mat_.id_apply_of_ne _ _ _ (Ne.symm h), biproduct.ι_π_ne _ (Ne.symm h)]
+  map_comp f g := by
+    ext i j : 2
+    simp [biproduct.lift_desc, ← Functor.map_comp]
+
+/-- The image of a matrix object is canonically the biproduct of the images of its summands. -/
+def liftToBiproductsObjIso (F : C ⥤ E) [F.Additive] (X : Mat_ C) :
+    F.liftToBiproducts.obj X ≅ ⨁ fun i ↦ F.obj (X.X i) :=
+  Iso.refl _
+
+@[reassoc (attr := simp)]
+theorem liftToBiproducts_map (F : C ⥤ E) [F.Additive] {X Y : Mat_ C} (f : X ⟶ Y) :
+    (F.liftToBiproductsObjIso X).inv ≫ F.liftToBiproducts.map f ≫
+      (F.liftToBiproductsObjIso Y).hom = biproduct.matrix (fun i j ↦ F.map (f i j)) := by
+  change 𝟙 _ ≫ _ ≫ 𝟙 _ = _
+  simp [liftToBiproducts]
+
+instance (F : C ⥤ E) [F.Additive] : F.liftToBiproducts.Additive where
+  map_add {X Y f g} := by
+    apply (cancel_epi (F.liftToBiproductsObjIso X).inv).1
+    apply (cancel_mono (F.liftToBiproductsObjIso Y).hom).1
+    simp only [Category.assoc, Preadditive.add_comp, Preadditive.comp_add,
+      liftToBiproducts_map, Mat_.add_apply, Functor.map_add]
+    ext i j : 2
+    simp [Preadditive.add_comp, Preadditive.comp_add]
+
+omit [HasFiniteBiproducts E] in
+/-- The hom of the singleton biproduct isomorphism is its sole projection. -/
+private theorem biproductUniqueIso_hom_eq_π {J : Type*} [Unique J] (A : J → E)
+    [HasBiproduct A] : (biproductUniqueIso A).hom = biproduct.π A default := by
+  apply biproduct.hom_ext'
+  intro i
+  obtain rfl : i = default := Subsingleton.elim _ _
+  simp [biproductUniqueIso_hom, limitBiconeOfUnique]
+
+/-- Restricting the biproduct extension along the embedding as one-term families recovers
+the original additive functor. -/
+def embeddingLiftToBiproductsIso (F : C ⥤ E) [F.Additive] :
+    Mat_.embedding C ⋙ F.liftToBiproducts ≅ F := by
+  let e (X : C) := F.liftToBiproductsObjIso ((Mat_.embedding C).obj X)
+  refine NatIso.ofComponents (fun X ↦ e X ≪≫ biproductUniqueIso _) ?_
+  intro X Y f
+  apply (cancel_epi (e X).inv).1
+  change (e X).inv ≫ (F.liftToBiproducts.map ((Mat_.embedding C).map f) ≫
+      (e Y).hom ≫ (biproductUniqueIso _).hom) =
+    (e X).inv ≫ ((e X).hom ≫ (biproductUniqueIso _).hom) ≫ F.map f
+  simp only [e, Category.assoc, liftToBiproducts_map_assoc, Iso.inv_hom_id_assoc,
+    biproductUniqueIso_hom_eq_π, biproduct.matrix_π]
+  apply biproduct.hom_ext'
+  intro i
+  obtain rfl : i = default := Subsingleton.elim _ _
+  simp only [biproduct.ι_desc, Mat_.embedding_map_apply]
+  let A := fun j : ((Mat_.embedding C).obj X).ι ↦ F.obj (((Mat_.embedding C).obj X).X j)
+  exact (biproduct.ι_π_self_assoc A default (F.map f)).symm
+
+@[simp]
+theorem embeddingLiftToBiproductsIso_hom_app (F : C ⥤ E) [F.Additive] (X : C) :
+    (F.embeddingLiftToBiproductsIso).hom.app X =
+      (F.liftToBiproductsObjIso ((Mat_.embedding C).obj X)).hom ≫ biproduct.π _ default :=
+  congrArg (_ ≫ ·) (biproductUniqueIso_hom_eq_π _)
+
+@[simp]
+theorem embeddingLiftToBiproductsIso_inv_app (F : C ⥤ E) [F.Additive] (X : C) :
+    (F.embeddingLiftToBiproductsIso).inv.app X =
+      biproduct.ι _ default ≫ (F.liftToBiproductsObjIso ((Mat_.embedding C).obj X)).inv := by
+  apply (cancel_mono (F.embeddingLiftToBiproductsIso.hom.app X)).1
+  rw [Iso.inv_hom_id_app, embeddingLiftToBiproductsIso_hom_app]
+  let M := (Mat_.embedding C).obj X
+  let A := fun i : M.ι ↦ F.obj (M.X i)
+  change 𝟙 (A default) = (biproduct.ι A default ≫ (F.liftToBiproductsObjIso M).inv) ≫
+    (F.liftToBiproductsObjIso M).hom ≫ biproduct.π A default
+  rw [Category.assoc, Iso.inv_hom_id_assoc, biproduct.ι_π_self]
+
+/-- The extension of a fully faithful additive functor to matrices is fully faithful.
+The preimage takes the preimage of each transported matrix component. -/
+def FullyFaithful.liftToBiproducts {F : C ⥤ E} [F.Additive] (hF : F.FullyFaithful) :
+    F.liftToBiproducts.FullyFaithful where
+  preimage {X Y} f i j := hF.preimage (biproduct.components
+    ((F.liftToBiproductsObjIso X).inv ≫ f ≫ (F.liftToBiproductsObjIso Y).hom) i j)
+  map_preimage {X Y} f := by
+    apply (cancel_epi (F.liftToBiproductsObjIso X).inv).1
+    apply (cancel_mono (F.liftToBiproductsObjIso Y).hom).1
+    let p : X ⟶ Y := fun i j ↦ hF.preimage (biproduct.components
+      ((F.liftToBiproductsObjIso X).inv ≫ f ≫ (F.liftToBiproductsObjIso Y).hom) i j)
+    change (_ ≫ F.liftToBiproducts.map p) ≫ _ = _
+    rw [Category.assoc, liftToBiproducts_map, Category.assoc]
+    simpa only [p, hF.map_preimage] using! biproduct.components_matrix
+      ((F.liftToBiproductsObjIso X).inv ≫ f ≫ (F.liftToBiproductsObjIso Y).hom)
+  preimage_map f := by
+    funext i j
+    simp only [liftToBiproducts_map, biproduct.matrix_components, hF.preimage_map]
+
+@[simp]
+theorem FullyFaithful.liftToBiproducts_preimage_apply {F : C ⥤ E} [F.Additive]
+    (hF : F.FullyFaithful) {X Y : Mat_ C} (f : F.liftToBiproducts.obj X ⟶ F.liftToBiproducts.obj Y)
+    (i : X.ι) (j : Y.ι) :
+    hF.liftToBiproducts.preimage f i j = hF.preimage (biproduct.components
+      ((F.liftToBiproductsObjIso X).inv ≫ f ≫ (F.liftToBiproductsObjIso Y).hom) i j) := (rfl)
+
+/-- The biproduct comparison for an additive functor on matrices, in independent universes. -/
+private def matrixObjIso (L : Mat_ C ⥤ E) [L.Additive] (X : Mat_ C) :
+    L.obj X ≅ ⨁ fun i ↦ L.obj ((Mat_.embedding C).obj (X.X i)) :=
+  L.mapIso X.isoBiproductEmbedding ≪≫ L.mapBiproduct _
+
+omit [HasFiniteBiproducts E] in
+@[reassoc]
+private theorem matrixObjIso_hom_π (L : Mat_ C ⥤ E) [L.Additive] (X : Mat_ C) (i : X.ι) :
+    (matrixObjIso L X).hom ≫ biproduct.π _ i =
+      L.map (X.isoBiproductEmbedding.hom ≫ biproduct.π _ i) := by
+  rw [matrixObjIso, Iso.trans_hom, mapIso_hom, mapBiproduct_hom, Category.assoc,
+    biproduct.lift_π, L.map_comp]
+
+omit [HasFiniteBiproducts E] in
+@[reassoc]
+private theorem ι_matrixObjIso_inv (L : Mat_ C ⥤ E) [L.Additive] (X : Mat_ C) (i : X.ι) :
+    biproduct.ι _ i ≫ (matrixObjIso L X).inv =
+      L.map (biproduct.ι _ i ≫ X.isoBiproductEmbedding.inv) := by
+  rw [matrixObjIso, Iso.trans_inv, mapIso_inv, mapBiproduct_inv, ← Category.assoc,
+    biproduct.ι_desc, L.map_comp]
+
+open scoped Classical in
+private theorem matrixEmbedding_hom_π (Y : Mat_ C) (j : Y.ι) :
+    Y.isoBiproductEmbedding.hom ≫ biproduct.π _ j =
+      (fun k _ ↦ if h : k = j then eqToHom (congrArg Y.X h) else 0) := by
+  let π (s : Y.ι) : Y ⟶ (Mat_.embedding C).obj (Y.X s) :=
+    fun k _ ↦ if h : k = s then eqToHom (congrArg Y.X h) else 0
+  exact biproduct.lift_π π j
+
+@[reassoc]
+private theorem matrixObjIso_naturality (L : Mat_ C ⥤ E) [L.Additive] {X Y : Mat_ C}
+    (f : X ⟶ Y) :
+    L.map f ≫ (matrixObjIso L Y).hom =
+      (matrixObjIso L X).hom ≫
+        biproduct.matrix (fun i j ↦ L.map ((Mat_.embedding C).map (f i j))) := by
+  classical
+  apply (cancel_epi (matrixObjIso L X).inv).1
+  simp only [Iso.inv_hom_id_assoc]
+  refine biproduct.hom_ext _ _ (fun j ↦ biproduct.hom_ext' _ _ fun i ↦ ?_)
+  simp only [Category.assoc, ι_matrixObjIso_inv_assoc, matrixObjIso_hom_π,
+    biproduct.ι_matrix_assoc, biproduct.lift_π, ← L.map_comp]
+  apply congrArg L.map
+  let ι (s : X.ι) : (Mat_.embedding C).obj (X.X s) ⟶ X :=
+    fun _ k ↦ if h : s = k then eqToHom (congrArg X.X h) else 0
+  have hi : biproduct.ι _ i ≫ X.isoBiproductEmbedding.inv = ι i :=
+    biproduct.ι_desc ι i
+  let π : Y ⟶ (Mat_.embedding C).obj (Y.X j) :=
+    fun k _ ↦ if h : k = j then eqToHom (congrArg Y.X h) else 0
+  have hj : Y.isoBiproductEmbedding.hom ≫ biproduct.π _ j = π :=
+    matrixEmbedding_hom_π Y j
+  let d : X.X i ⟶ Y.X j := f i j
+  change _ = (Mat_.embedding C).map d
+  rw [← Category.assoc (biproduct.ι _ i), hi, hj]
+  apply Mat_.hom_ext
+  intro a b
+  have h : (ι i ≫ f ≫ π) a b = (f ≫ π) i b := by
+    rw [Mat_.comp_apply, Finset.sum_eq_single i]
+    · have h : ι i a i = 𝟙 (X.X i) := by
+        change (if h : i = i then eqToHom (congrArg X.X h) else 0) = _
+        simp
+      rw [h]
+      exact Category.id_comp ((f ≫ π) i b : X.X i ⟶ Y.X j)
+    · intro k _ hk
+      have h : ι i a k = 0 := dite_eq_right (Ne.symm hk)
+      rw [h, zero_comp]
+    · simp
+  refine h.trans ?_
+  change (f ≫ π) i b = d
+  rw [Mat_.comp_apply, Finset.sum_eq_single j]
+  · have h : π j b = 𝟙 (Y.X j) := by
+      change (if h : j = j then eqToHom (congrArg Y.X h) else 0) = _
+      simp
+    rw [h]
+    exact Category.comp_id d
+  · intro k _ hk
+    have h : π k b = 0 := dite_eq_right hk
+    rw [h, comp_zero]
+  · simp
+
+/-- Compare an additive extension with the biproduct lift using its given restriction
+isomorphism. This is the universe-polymorphic form of `Mat_.liftUnique`. -/
+def liftToBiproductsUnique (F : C ⥤ E) [F.Additive] (L : Mat_ C ⥤ E) [L.Additive]
+    (α : Mat_.embedding C ⋙ L ≅ F) : L ≅ F.liftToBiproducts :=
+  NatIso.ofComponents
+    (fun X ↦ matrixObjIso L X ≪≫ biproduct.mapIso (fun i ↦ α.app (X.X i)) ≪≫
+      (F.liftToBiproductsObjIso X).symm)
+    (fun {X Y} f ↦ by
+      apply (cancel_mono (F.liftToBiproductsObjIso Y).hom).1
+      simp only [Iso.trans_hom, Iso.symm_hom, biproduct.mapIso_hom, Category.assoc,
+        Iso.inv_hom_id, Category.comp_id, liftToBiproducts_map, matrixObjIso_naturality_assoc]
+      simp only [biproduct.matrix_map, biproduct.map_matrix]
+      congr 2
+      funext i j
+      exact α.hom.naturality (f i j))
+
+/-- The comparison of extensions recovers the given isomorphism on one-term families. -/
+@[simp]
+theorem liftToBiproductsUnique_restrict (F : C ⥤ E) [F.Additive] (L : Mat_ C ⥤ E) [L.Additive]
+    (α : Mat_.embedding C ⋙ L ≅ F) :
+    isoWhiskerLeft (Mat_.embedding C) (F.liftToBiproductsUnique L α) ≪≫
+      F.embeddingLiftToBiproductsIso = α := by
+  apply Iso.ext
+  ext X
+  let M := (Mat_.embedding C).obj X
+  have h : M.isoBiproductEmbedding.hom ≫ biproduct.π _ default = 𝟙 M := by
+    have hp := matrixEmbedding_hom_π M (default : M.ι)
+    refine hp.trans ?_
+    apply Mat_.hom_ext
+    intro i j
+    obtain rfl : i = default := Subsingleton.elim _ _
+    obtain rfl : j = default := Subsingleton.elim _ _
+    exact (dite_eq_left rfl).trans ((eqToHom_refl _ _).trans (Mat_.id_apply_self _ _).symm)
+  let a (i : M.ι) : L.obj ((Mat_.embedding C).obj (M.X i)) ⟶ F.obj (M.X i) :=
+    α.hom.app (M.X i)
+  change ((matrixObjIso L M).hom ≫ biproduct.map a ≫ (F.liftToBiproductsObjIso M).inv) ≫
+    (F.embeddingLiftToBiproductsIso).hom.app X = α.hom.app X
+  rw [embeddingLiftToBiproductsIso_hom_app]
+  change ((matrixObjIso L M).hom ≫ biproduct.map a ≫ (F.liftToBiproductsObjIso M).inv) ≫
+    ((F.liftToBiproductsObjIso M).hom ≫
+      biproduct.π (fun i : M.ι ↦ F.obj (M.X i)) default) = a default
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, biproduct.map_π, matrixObjIso_hom_π_assoc,
+    h]
+  exact (congrArg (· ≫ a default) (L.map_id M)).trans (Category.id_comp _)
+
+end CategoryTheory.Functor

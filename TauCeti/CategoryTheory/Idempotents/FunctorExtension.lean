@@ -24,7 +24,7 @@ open Idempotents CategoryTheory.Functor
 
 variable {C D : Type*} [Category* C] [Category* D] {F : C ⥤ D}
 
-namespace Idempotents
+namespace Functor
 
 /-- Restriction of the extension to the original category recovers the original functor. -/
 noncomputable def toKaroubiCompFunctorExtensionIso [IsIdempotentComplete D] (F : C ⥤ D) :
@@ -34,7 +34,7 @@ noncomputable def toKaroubiCompFunctorExtensionIso [IsIdempotentComplete D] (F :
     isoWhiskerRight ((functorExtension₂CompWhiskeringLeftToKaroubiIso C D).app F) E.inverse ≪≫
     Functor.associator _ _ _ ≪≫ isoWhiskerLeft F E.unitIso.symm ≪≫ F.rightUnitor
 
-end Idempotents
+end Functor
 
 namespace Functor.FullyFaithful
 
@@ -57,7 +57,7 @@ image. -/
 theorem essImage_functorExtension [IsIdempotentComplete D] (hF : F.FullyFaithful) :
     ((Idempotents.functorExtension C D).obj F).essImage = F.essImage.retractClosure := by
   let G := (Idempotents.functorExtension C D).obj F
-  let e := toKaroubiCompFunctorExtensionIso F
+  let e := F.toKaroubiCompFunctorExtensionIso
   let : G.Full := hF.functorExtension.full
   let : G.Faithful := hF.functorExtension.faithful
   refine le_antisymm (fun Y hY ↦ ?_) ?_

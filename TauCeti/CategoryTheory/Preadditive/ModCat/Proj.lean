@@ -9,7 +9,7 @@ public import TauCeti.CategoryTheory.Idempotents.FunctorExtension
 public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 public import TauCeti.CategoryTheory.Preadditive.Mat
-public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
+public import TauCeti.CategoryTheory.Preadditive.ModCat.FiniteFree
 public import TauCeti.CategoryTheory.Preadditive.Projective.FiniteProducts
 
 /-!
@@ -20,6 +20,8 @@ retracts of finite sums of representables. The extension of Yoneda to the matrix
 `Mat_ C` sends a finite family to the biproduct of its representables. Passing to the Karoubi
 envelope yields an equivalence with the category of finitely generated projective modules.
 For an idempotent-complete `C` with finite biproducts, Yoneda already gives the equivalence.
+If `C` has hom universe `v`, the ambient category is `ModCat.{v} C`, with the value
+universe of Yoneda.
 
 ## References
 
@@ -41,7 +43,8 @@ namespace TauCeti.ModCat
 variable {C : Type u} [Category.{v} C] [Preadditive C]
 
 variable (C) in
-/-- The object property defining the category of finitely generated projective `C`-modules. -/
+/-- The object property of finitely generated projectives in `ModCat.{v} C`, where `v` is
+the hom universe of `C` and hence the value universe of Yoneda. -/
 def proj : ObjectProperty (ModCat.{v} C) :=
   fun F ↦ Projective F ∧ IsFinitelyGeneratedFunctor F.obj
 
@@ -51,11 +54,13 @@ theorem proj_iff {F : ModCat.{v} C} :
     proj C F ↔ Projective F ∧ IsFinitelyGeneratedFunctor F.obj :=
   Iff.rfl
 
+/-- The underlying module of a finitely generated projective is projective in
+the ambient category `ModCat.{v} C`. -/
 instance (P : (proj C).FullSubcategory) : Projective P.obj :=
   (proj_iff.1 P.property).1
 
 /-- The underlying functor of a finitely generated projective module is finitely generated. -/
-theorem proj_isFinitelyGeneratedFunctor (P : (proj C).FullSubcategory) :
+theorem isFinitelyGeneratedFunctor_of_proj (P : (proj C).FullSubcategory) :
     IsFinitelyGeneratedFunctor P.obj.obj :=
   (proj_iff.1 P.property).2
 
@@ -65,55 +70,85 @@ private abbrev inclusion (C : Type u) [Category.{v} C] [Preadditive C] :=
 local instance : HasFiniteBiproducts (Cᵒᵖ ⥤ AddCommGrpCat.{v}) :=
   HasFiniteBiproducts.of_hasFiniteProducts
 
+end TauCeti.ModCat
+
+namespace CategoryTheory.Mat_
+
+open TauCeti.ModCat
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+
 /-- The matrix extension of Yoneda has underlying functor the coproduct of the
 representables indexed by the finite family. -/
 def liftToBiproductsYonedaObjIsoCoproduct (X : Mat_ C) :
-    ((Mat_.liftToBiproducts (yoneda C)).obj X).obj ≅ ∐ fun i ↦ preadditiveYoneda.obj (X.X i) :=
-  (inclusion C).mapBiproduct _ ≪≫ biproduct.isoCoproduct _
+    ((TauCeti.ModCat.yoneda C).liftToBiproducts.obj X).obj ≅
+      ∐ fun i ↦ preadditiveYoneda.obj (X.X i) :=
+  (inclusion C).mapIso ((TauCeti.ModCat.yoneda C).liftToBiproductsObjIso X) ≪≫
+    (inclusion C).mapBiproduct _ ≪≫ biproduct.isoCoproduct _
 
-/-- A module is finitely generated exactly when there is an epimorphism to it from the image
-of a finite family under the matrix extension of Yoneda. -/
-theorem isFinitelyGeneratedFunctor_iff_exists_epi_liftToBiproducts {F : ModCat.{v} C} :
+end CategoryTheory.Mat_
+
+namespace TauCeti.ModCat
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+
+variable (C) in
+/-- The finite free modules are the essential image of the matrix extension of Yoneda. -/
+theorem isFiniteFree_eq_essImage_liftToBiproducts :
+    isFiniteFree C = (yoneda C).liftToBiproducts.essImage := by
+  ext F
+  constructor
+  · intro h
+    obtain ⟨n, Y, ⟨e⟩⟩ := isFiniteFree_iff_exists_iso_biproduct.mp h
+    let X : Mat_ C := ⟨Fin n, Y⟩
+    exact ⟨X, ⟨(yoneda C).liftToBiproductsObjIso X ≪≫ e.symm⟩⟩
+  · rintro ⟨X, ⟨e⟩⟩
+    obtain ⟨n, ⟨i⟩⟩ := Finite.exists_equiv_fin X.ι
+    exact isFiniteFree_iff_exists_iso_biproduct.mpr ⟨n, X.X ∘ i.symm,
+      ⟨e.symm ≪≫ (yoneda C).liftToBiproductsObjIso X ≪≫
+        (biproduct.reindex i.symm ((yoneda C).obj ∘ X.X)).symm⟩⟩
+
+/-- A module is finitely generated exactly when it is a quotient of a finite free module. -/
+theorem isFinitelyGeneratedFunctor_iff_exists_epi_finiteFree {F : ModCat.{v} C} :
     IsFinitelyGeneratedFunctor F.obj ↔
-      ∃ (X : Mat_ C) (p : (Mat_.liftToBiproducts (yoneda C)).obj X ⟶ F), Epi p := by
+      ∃ (P : ModCat.{v} C) (_ : isFiniteFree C P) (p : P ⟶ F), Epi p := by
   rw [isFinitelyGeneratedFunctor_def]
   constructor
   · rintro ⟨n, Y, p, hp⟩
     let X : Mat_ C := ⟨Fin n, Y⟩
-    let q : (Mat_.liftToBiproducts (yoneda C)).obj X ⟶ F :=
-      ObjectProperty.homMk ((liftToBiproductsYonedaObjIsoCoproduct X).hom ≫ p)
-    exact ⟨X, q, (inclusion C).epi_of_epi_map (epi_comp _ _)⟩
-  · rintro ⟨X, p, hp⟩
-    obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin X.ι
-    let Y : Fin n → C := X.X ∘ e.symm
-    let i := Sigma.reindex e.symm (fun j ↦ preadditiveYoneda.obj (X.X j))
-    have : Epi ((inclusion C).map p) := (inclusion C).map_epi p
-    exact ⟨n, Y, i.hom ≫ (liftToBiproductsYonedaObjIsoCoproduct X).inv ≫ (inclusion C).map p,
-      epi_comp _ _⟩
+    let q : (yoneda C).liftToBiproducts.obj X ⟶ F :=
+      ObjectProperty.homMk (X.liftToBiproductsYonedaObjIsoCoproduct.hom ≫ p)
+    rw [isFiniteFree_eq_essImage_liftToBiproducts]
+    exact ⟨_, (yoneda C).liftToBiproducts.obj_mem_essImage X, q,
+      (inclusion C).epi_of_epi_map (epi_comp _ _)⟩
+  · rintro ⟨P, hP, p, hp⟩
+    rw [isFiniteFree_eq_essImage_liftToBiproducts] at hP
+    obtain ⟨X, ⟨e⟩⟩ := hP
+    obtain ⟨n, ⟨i⟩⟩ := Finite.exists_equiv_fin X.ι
+    let s := Sigma.reindex i.symm (fun j ↦ preadditiveYoneda.obj (X.X j))
+    have : Epi ((inclusion C).map (e.hom ≫ p)) := (inclusion C).map_epi _
+    exact ⟨n, X.X ∘ i.symm, s.hom ≫ X.liftToBiproductsYonedaObjIsoCoproduct.inv ≫
+      (inclusion C).map (e.hom ≫ p), epi_comp _ _⟩
 
-private theorem proj_liftToBiproducts_yoneda_obj (X : Mat_ C) :
-    proj C ((Mat_.liftToBiproducts (yoneda C)).obj X) := by
-  refine proj_iff.2 ⟨?_, isFinitelyGeneratedFunctor_iff_exists_epi_liftToBiproducts.2
-    ⟨X, 𝟙 _, inferInstance⟩⟩
-  rw [Mat_.liftToBiproducts_obj]
-  exact Projective.of_isColimit_cofan (biproduct.isColimit _)
-
-/-- A finitely generated projective module is precisely a retract of a finite direct sum of
-representables. The finite family may be empty. -/
-theorem proj_iff_exists_retract_liftToBiproducts {F : ModCat.{v} C} :
-    proj C F ↔ ∃ X : Mat_ C, Nonempty (Retract F ((Mat_.liftToBiproducts (yoneda C)).obj X)) := by
+/-- A finitely generated projective module is precisely a retract of a finite free module.
+The finite family may be empty. -/
+theorem proj_iff_exists_retract_finiteFree {F : ModCat.{v} C} :
+    proj C F ↔ ∃ (P : ModCat.{v} C) (_ : isFiniteFree C P), Nonempty (Retract F P) := by
   constructor
   · intro h
     obtain ⟨hP, hF⟩ := proj_iff.1 h
-    obtain ⟨X, p, hp⟩ := isFinitelyGeneratedFunctor_iff_exists_epi_liftToBiproducts.1 hF
-    let : Projective F := hP
+    obtain ⟨P, h, p, hp⟩ := isFinitelyGeneratedFunctor_iff_exists_epi_finiteFree.1 hF
     obtain ⟨i, hi⟩ := Projective.factors (𝟙 F) p
-    exact ⟨X, ⟨⟨i, p, hi⟩⟩⟩
-  · rintro ⟨X, ⟨r⟩⟩
-    let : Projective ((Mat_.liftToBiproducts (yoneda C)).obj X) :=
-      (proj_iff.1 (proj_liftToBiproducts_yoneda_obj X)).1
+    exact ⟨P, h, ⟨⟨i, p, hi⟩⟩⟩
+  · rintro ⟨P, hP, ⟨r⟩⟩
+    let : Projective P := projective_of_isFiniteFree hP
     exact proj_iff.2 ⟨r.projective,
-      isFinitelyGeneratedFunctor_iff_exists_epi_liftToBiproducts.2 ⟨X, r.r, inferInstance⟩⟩
+      isFinitelyGeneratedFunctor_iff_exists_epi_finiteFree.2 ⟨P, hP, r.r, inferInstance⟩⟩
+
+private theorem proj_liftToBiproducts_yoneda_obj (X : Mat_ C) :
+    proj C ((yoneda C).liftToBiproducts.obj X) := by
+  rw [proj_iff_exists_retract_finiteFree, isFiniteFree_eq_essImage_liftToBiproducts]
+  exact ⟨_, (yoneda C).liftToBiproducts.obj_mem_essImage X, ⟨Retract.refl _⟩⟩
 
 /-- A projective module is finitely generated exactly when its underlying functor is
 finitely presented. -/
@@ -121,20 +156,15 @@ theorem proj_iff_projective_and_isFinitelyPresentedFunctor {F : ModCat.{v} C} :
     proj C F ↔ Projective F ∧ IsFinitelyPresentedFunctor F.obj := by
   refine ⟨fun h ↦ ⟨(proj_iff.1 h).1, ?_⟩, fun h ↦
     proj_iff.2 ⟨h.1, h.2.isFinitelyGeneratedFunctor⟩⟩
-  obtain ⟨X, ⟨r⟩⟩ := proj_iff_exists_retract_liftToBiproducts.1 h
-  let P : ObjectProperty (ModCat.{v} C) :=
-    (isFinitelyPresentedFunctor C).inverseImage (inclusion C)
-  have hX : P ((Mat_.liftToBiproducts (yoneda C)).obj X) := by
-    rw [Mat_.liftToBiproducts_obj]
-    exact P.prop_of_isLimit (biproduct.isLimit _)
-      (fun i ↦ isFinitelyPresentedFunctor_preadditiveYoneda_obj (X.X i.as))
-  exact P.prop_of_retract r hX
+  obtain ⟨P, hP, ⟨r⟩⟩ := proj_iff_exists_retract_finiteFree.1 h
+  exact ((isFinitelyPresentedFunctor C).inverseImage (inclusion C)).prop_of_retract r
+    (isFinitelyPresentedFunctor_of_isFiniteFree hP)
 
 /-- Finitely generated projectives are closed under retracts. -/
 instance : (proj C).IsStableUnderRetracts where
   of_retract r h := by
-    obtain ⟨X, ⟨s⟩⟩ := proj_iff_exists_retract_liftToBiproducts.1 h
-    exact proj_iff_exists_retract_liftToBiproducts.2 ⟨X, ⟨r.trans s⟩⟩
+    obtain ⟨P, hP, ⟨s⟩⟩ := proj_iff_exists_retract_finiteFree.1 h
+    exact proj_iff_exists_retract_finiteFree.2 ⟨P, hP, ⟨r.trans s⟩⟩
 
 /-- Finitely generated projectives are closed under finite products. In `Mod C` these are
 also finite coproducts. -/
@@ -154,14 +184,14 @@ abbrev projYoneda : C ⥤ (proj C).FullSubcategory :=
 
 private def matToProj (C : Type u) [Category.{v} C] [Preadditive C] :
     Mat_ C ⥤ (proj C).FullSubcategory :=
-  (proj C).lift (Mat_.liftToBiproducts (yoneda C)) proj_liftToBiproducts_yoneda_obj
+  (proj C).lift ((yoneda C).liftToBiproducts) proj_liftToBiproducts_yoneda_obj
 
 private def matToProjFullyFaithful : (matToProj C).FullyFaithful :=
-  let h := Mat_.fullyFaithfulLiftToBiproducts (Functor.FullyFaithful.ofFullyFaithful (yoneda C))
-  let : (Mat_.liftToBiproducts (yoneda C)).Full := h.full
-  let : (Mat_.liftToBiproducts (yoneda C)).Faithful := h.faithful
+  let h := (Functor.FullyFaithful.ofFullyFaithful (yoneda C)).liftToBiproducts
+  let : ((yoneda C).liftToBiproducts).Full := h.full
+  let : ((yoneda C).liftToBiproducts).Faithful := h.faithful
   Functor.FullyFaithful.ofFullyFaithful
-    ((proj C).lift (Mat_.liftToBiproducts (yoneda C)) proj_liftToBiproducts_yoneda_obj)
+    ((proj C).lift ((yoneda C).liftToBiproducts) proj_liftToBiproducts_yoneda_obj)
 
 variable (C) in
 /-- The Karoubi envelope of the matrix category is equivalent to the category of finitely
@@ -174,21 +204,24 @@ def karoubiMatEquivProj : Karoubi (Mat_ C) ≌ (proj C).FullSubcategory := by
   let : G.Faithful := hG.faithful
   let : G.EssSurj := ⟨fun P ↦ by
     rw [(matToProjFullyFaithful (C := C)).essImage_functorExtension]
-    obtain ⟨X, ⟨r⟩⟩ := proj_iff_exists_retract_liftToBiproducts.1 P.property
+    obtain ⟨Q, hQ, ⟨r⟩⟩ := proj_iff_exists_retract_finiteFree.1 P.property
+    rw [isFiniteFree_eq_essImage_liftToBiproducts] at hQ
+    obtain ⟨X, ⟨e⟩⟩ := hQ
+    let r' := r.trans e.symm.retract
     refine ⟨(matToProj C).obj X, (matToProj C).obj_mem_essImage X, ⟨?_⟩⟩
-    exact ⟨ObjectProperty.homMk r.i, ObjectProperty.homMk r.r,
-      ObjectProperty.hom_ext _ r.retract⟩⟩
+    exact ⟨ObjectProperty.homMk r'.i, ObjectProperty.homMk r'.r,
+      ObjectProperty.hom_ext _ r'.retract⟩⟩
   let : G.IsEquivalence := {}
   exact G.asEquivalence
 
 variable (C) in
-/-- On the matrix category, the equivalence sends a finite family to the biproduct of
-its representables and acts by the corresponding matrices of Yoneda maps. -/
+/-- Restricting the equivalence along `toKaroubi` and including into the ambient module
+category gives a functor naturally isomorphic to the biproduct extension of Yoneda. -/
 def karoubiMatEquivProjRestrictIso :
     (toKaroubi (Mat_ C) ⋙ (karoubiMatEquivProj C).functor) ⋙ (proj C).ι ≅
-      Mat_.liftToBiproducts (yoneda C) :=
-  Functor.isoWhiskerRight (toKaroubiCompFunctorExtensionIso (matToProj C)) (proj C).ι ≪≫
-    (proj C).liftCompιIso (Mat_.liftToBiproducts (yoneda C)) proj_liftToBiproducts_yoneda_obj
+      (yoneda C).liftToBiproducts :=
+  Functor.isoWhiskerRight ((matToProj C).toKaroubiCompFunctorExtensionIso) (proj C).ι ≪≫
+    (proj C).liftCompιIso ((yoneda C).liftToBiproducts) proj_liftToBiproducts_yoneda_obj
 
 variable (C) in
 /-- The category of finitely generated projective modules is equivalent to
@@ -202,7 +235,7 @@ projective module is representable. -/
 instance [HasFiniteBiproducts C] [IsIdempotentComplete C] : (projYoneda C).IsEquivalence where
   essSurj := ⟨fun P ↦ by
     obtain ⟨Y, p, hp⟩ := (isFinitelyGeneratedFunctor_iff_exists_single _).1
-      (proj_isFinitelyGeneratedFunctor P)
+      (isFinitelyGeneratedFunctor_of_proj P)
     let q : (yoneda C).obj Y ⟶ P.obj := ObjectProperty.homMk p
     let : Epi q := (inclusion C).epi_of_epi_map hp
     obtain ⟨i, hi⟩ := Projective.factors (𝟙 P.obj) q
@@ -211,3 +244,43 @@ instance [HasFiniteBiproducts C] [IsIdempotentComplete C] : (projYoneda C).IsEqu
     exact ⟨X, ⟨(proj C).fullyFaithfulι.preimageIso e⟩⟩⟩
 
 end TauCeti.ModCat
+
+namespace CategoryTheory.Idempotents.Karoubi
+
+open TauCeti.ModCat
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+
+/-- The image of a formal summand is a retract of the matrix lift of its underlying object.
+The maps are obtained from the Karoubi summand maps via the restriction isomorphism. -/
+def matEquivProjRetract (P : Karoubi (Mat_ C)) :
+    Retract ((karoubiMatEquivProj C).functor.obj P).obj
+      ((TauCeti.ModCat.yoneda C).liftToBiproducts.obj P.X) :=
+  (P.retract.map ((karoubiMatEquivProj C).functor ⋙ (proj C).ι)).trans
+    ((karoubiMatEquivProjRestrictIso C).app P.X).retract
+
+theorem matEquivProjRetract_i (P : Karoubi (Mat_ C)) :
+    (matEquivProjRetract P).i =
+      ((karoubiMatEquivProj C).functor ⋙ (proj C).ι).map P.decompId_i ≫
+        (karoubiMatEquivProjRestrictIso C).hom.app P.X := (rfl)
+
+theorem matEquivProjRetract_r (P : Karoubi (Mat_ C)) :
+    (matEquivProjRetract P).r =
+      (karoubiMatEquivProjRestrictIso C).inv.app P.X ≫
+        ((karoubiMatEquivProj C).functor ⋙ (proj C).ι).map P.decompId_p := (rfl)
+
+/-- The other composite of the retract maps is the image of the matrix idempotent. -/
+@[reassoc (attr := simp)]
+theorem matEquivProjRetract_r_i (P : Karoubi (Mat_ C)) :
+    (matEquivProjRetract P).r ≫ (matEquivProjRetract P).i =
+      (TauCeti.ModCat.yoneda C).liftToBiproducts.map P.p := by
+  let G := (karoubiMatEquivProj C).functor ⋙ (proj C).ι
+  let e := karoubiMatEquivProjRestrictIso C
+  rw [matEquivProjRetract_r, matEquivProjRetract_i]
+  change (e.inv.app P.X ≫ G.map P.decompId_p) ≫ G.map P.decompId_i ≫ e.hom.app P.X = _
+  rw [Category.assoc, ← G.map_comp_assoc, ← P.decomp_p]
+  have h := e.hom.naturality P.p
+  change G.map ((toKaroubi (Mat_ C)).map P.p) ≫ e.hom.app P.X = _ at h
+  rw [h, Iso.inv_hom_id_app_assoc]
+
+end CategoryTheory.Idempotents.Karoubi
