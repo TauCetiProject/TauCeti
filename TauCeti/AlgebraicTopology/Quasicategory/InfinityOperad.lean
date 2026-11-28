@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import TauCeti.AlgebraicTopology.Quasicategory.CoCartesian.Basic
-public import TauCeti.AlgebraicTopology.Quasicategory.Postcomposition
+public import TauCeti.AlgebraicTopology.Quasicategory.MappingSpace.OverPostcomposition
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
 public import TauCeti.CategoryTheory.Category.Pointed.Fin
 
@@ -66,6 +66,8 @@ monoidal quasicategories these are the lax symmetric monoidal functors.
   the identity of `N(Fin_*)`, the commutative `∞`-operad.
 * `SSet.not_infinityOperad_of_not_nonempty`: the empty simplicial set over `N(Fin_*)` is not an
   `∞`-operad, since it has no vertex representing the empty tuple of colors.
+* `SSet.InertProjectionLifts.exists_homotopy_segalMap`: the mapping-space Segal map can be
+  computed up to homotopy by any coordinatewise sections of relative composition triangles.
 
 ## References
 
@@ -137,6 +139,25 @@ lemma segalMap_π [InnerFibration p] (x : X _⦋0⦌) (e : Edge (p.app _ x) (p.a
       haveI := quasicategory_of_innerFibration p
       rightMappingSpaceOver.postcomp (L.edge i) (Equiv.apply_symm_apply _ _).symm := by
   simp [segalMap]
+
+/-- Choosing composition triangles separately in each coordinate gives a map homotopic to
+the operadic Segal map, within the product of the mapping spaces over the specified base edges.
+Thus compatible choices of triangles may be used to compute the Segal map. -/
+theorem exists_homotopy_segalMap [InnerFibration p] (x : X _⦋0⦌)
+    (e : Edge (p.app _ x) (p.app _ y))
+    (s : ∀ i : Fin n.len, (rightMappingSpaceOver p e : SSet.{u}) ⟶
+      (rightMappingSpaceOver.postcompSpace (L.edge i) e : SSet.{u}))
+    (hs : ∀ i, s i ≫ rightMappingSpaceOver.postcompSpace.src (L.edge i) e = 𝟙 _) :
+    Nonempty (Homotopy
+      (Pi.lift fun i ↦ s i ≫ rightMappingSpaceOver.postcompSpace.tgt (L.edge i) e
+        (Equiv.apply_symm_apply _ _).symm) (L.segalMap x e)) := by
+  have := quasicategory_of_innerFibration p
+  let H (i : Fin n.len) := Classical.choice
+    (rightMappingSpaceOver.exists_homotopy_postcomp (L.edge i)
+      (Equiv.apply_symm_apply _ _).symm (s i) (hs i))
+  refine ⟨Homotopy.mk' (Pi.lift fun i ↦ (H i).h) ?_ ?_⟩
+  · exact Pi.hom_ext _ _ fun i ↦ by simp [Category.assoc]
+  · exact Pi.hom_ext _ _ fun i ↦ by simp [Category.assoc]
 
 /-- The space `Mul({cᵢ}, z)` of multi-operations from the colors `cᵢ` to a color `z`: the space of
 maps `y ⟶ z` lying over the fold map `⟨n⟩ ⟶ ⟨1⟩`. -/

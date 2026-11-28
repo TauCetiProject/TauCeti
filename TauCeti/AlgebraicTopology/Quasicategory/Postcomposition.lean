@@ -421,6 +421,13 @@ noncomputable def postcomp [X.Quasicategory] (g : Edge y z) :
   haveI := isSplitEpi_of_rlp_monomorphisms (postcompSpace.rlp_src x g)
   section_ (postcompSpace.src x g) ≫ postcompSpace.tgt x g
 
+/-- Postcomposition is obtained from a section of source restriction on composition triangles. -/
+theorem exists_section_postcomp [X.Quasicategory] (g : Edge y z) :
+    ∃ s : (X.rightMappingSpace x y : SSet.{u}) ⟶ (postcompSpace x g : SSet.{u}),
+      s ≫ postcompSpace.src x g = 𝟙 _ ∧ s ≫ postcompSpace.tgt x g = postcomp x g := by
+  have := isSplitEpi_of_rlp_monomorphisms (postcompSpace.rlp_src x g)
+  exact ⟨section_ (postcompSpace.src x g), IsSplitEpi.id _, rfl⟩
+
 /-- **Postcomposition with `g` sends an edge `f` to a composite of `f` and `g`**: there is a
 `2`-simplex with edges `f`, `g` and the image of `f` under `SSet.rightMappingSpace.postcomp x g`. -/
 theorem postcomp_compStruct [X.Quasicategory] (g : Edge y z) (f : Edge x y) :
